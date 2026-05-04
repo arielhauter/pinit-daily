@@ -12,6 +12,7 @@ type Props = {
 
 export function ProductEditCard({ product, onSave, onClose }: Props) {
   const { showToast } = useToast();
+  const [displayName, setDisplayName] = useState(product.display_name);
   const [stock, setStock] = useState(product.current_stock);
   const [cost, setCost] = useState(product.last_known_cost_baht);
   const [sellPrice, setSellPrice] = useState(
@@ -55,6 +56,7 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
         body: JSON.stringify({
           recordId: product.id,
           fields: {
+            display_name: displayName,
             current_stock: stock,
             last_known_cost_baht: cost,
             last_known_sell_price_baht: sellPrice,
@@ -74,6 +76,7 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
       showToast("✅ บันทึกแล้ว (Saved!)", "success");
       onSave({
         ...product,
+        display_name: displayName,
         current_stock: stock,
         last_known_cost_baht: cost,
         last_known_sell_price_baht: sellPrice,
@@ -101,9 +104,6 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
               {product.sku}
             </div>
           )}
-          <h3 className="text-white font-bold text-sm">
-            {product.display_name}
-          </h3>
           {product.category && (
             <div className="text-xs text-slate-400">
               {product.category}
@@ -116,6 +116,18 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
         >
           ✕
         </button>
+      </div>
+
+      <div>
+        <label className="text-xs text-slate-400">
+          ชื่อสินค้า (Product Name)
+        </label>
+        <input
+          type="text"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          className="w-full h-10 bg-surface-dark text-white rounded-lg border border-slate-600 px-3 text-sm mt-1 font-bold"
+        />
       </div>
 
       <div>

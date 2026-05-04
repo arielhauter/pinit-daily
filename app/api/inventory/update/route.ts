@@ -13,6 +13,8 @@ export async function POST(request: Request) {
 
     const updateFields: Record<string, unknown> = {};
 
+    if (fields.display_name !== undefined)
+      updateFields.display_name = fields.display_name;
     if (fields.current_stock !== undefined)
       updateFields.current_stock = fields.current_stock;
     if (fields.last_known_cost_baht !== undefined)
