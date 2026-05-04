@@ -98,6 +98,7 @@ export type InventoryProduct = {
   photo_url: string | null;
   counted_date: string | null;
   counted_by: string | null;
+  show_repair_on_label: boolean;
 };
 
 export type CategoryProgress = {

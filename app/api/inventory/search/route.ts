@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
         "product_photo",
         "counted_date",
         "counted_by",
+        "show_repair_on_label",
       ],
       sort: [{ field: "display_name", direction: "asc" }],
       maxRecords: 20,
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
       photo_url: extractPhotoUrl(r.fields["product_photo"]),
       counted_date: (r.fields.counted_date as string) || null,
       counted_by: (r.fields.counted_by as string) || null,
+      show_repair_on_label: (r.fields.show_repair_on_label as boolean) || false,
     }));
 
     return Response.json(results);

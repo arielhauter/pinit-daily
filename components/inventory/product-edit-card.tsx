@@ -301,7 +301,7 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
                     "/" + size +
                     "?name=" + encodeURIComponent(product.display_name) +
                     "&price=" + sellPrice;
-                  if (repairPrice > 0) {
+                  if (repairPrice > 0 && product.show_repair_on_label) {
                     url += "&repair=" + repairPrice;
                   }
                   window.open(url, "_blank");
