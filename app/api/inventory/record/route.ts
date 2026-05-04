@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const res = await fetch(
       `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLES.PRODUCTS)}/${recordId}`,
       {
+        cache: "no-store",
         headers: {
           Authorization: `Bearer ${AIRTABLE_API_KEY}`,
         },

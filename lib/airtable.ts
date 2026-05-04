@@ -19,6 +19,7 @@ async function airtableFetch(
 ): Promise<Response> {
   const res = await fetch(`${BASE_URL}/${path}`, {
     ...options,
+    cache: "no-store",
     headers: {
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       "Content-Type": "application/json",
