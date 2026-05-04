@@ -6,11 +6,15 @@ export const dynamic = "force-dynamic";
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY!;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!;
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ recordId: string }> }
-) {
-  const { recordId } = await params;
+export async function GET(request: NextRequest) {
+  const recordId = request.nextUrl.searchParams.get("id");
+
+  if (!recordId) {
+    return Response.json(
+      { error: "Missing id parameter" },
+      { status: 400 }
+    );
+  }
 
   try {
     const res = await fetch(

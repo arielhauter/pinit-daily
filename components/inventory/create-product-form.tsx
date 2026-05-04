@@ -60,7 +60,7 @@ export function CreateProductForm({
 
       pollRef.current = setTimeout(async () => {
         try {
-          const res = await fetch(`/api/inventory/${recordId}`);
+          const res = await fetch(`/api/inventory/record?id=${recordId}`);
           if (!res.ok) throw new Error("Fetch failed");
           const data = await res.json();
 
