@@ -26,9 +26,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const sanitized = sanitizeForFormula(query);
+    const words = query.split(/\s+/).filter((w) => w.length > 0);
+    if (words.length === 0) {
+      return Response.json([]);
+    }
+
+    const wordClauses = words.map((word) => {
+      const s = sanitizeForFormula(word);
+      return `OR(SEARCH("${s}", {display_name}), SEARCH("${s}", {original_name}))`;
+    });
+    const formula =
+      wordClauses.length === 1
+        ? wordClauses[0]
+        : `AND(${wordClauses.join(", ")})`;
+
     const records = await selectRecords(TABLES.PRODUCTS, {
-      filterByFormula: `OR(SEARCH("${sanitized}", {display_name}), SEARCH("${sanitized}", {original_name}))`,
+      filterByFormula: formula,
       fields: [
         "sku",
         "display_name",
