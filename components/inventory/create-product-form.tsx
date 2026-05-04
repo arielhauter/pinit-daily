@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/components/toast";
 
 type Props = {
   categories: string[];
   onCreated: (record: { id: string; display_name: string }) => void;
   onClose: () => void;
+};
+
+type Phase = "form" | "polling-sku" | "print-ready" | "timeout";
+
+type SkuResult = {
+  sku: string;
+  display_name: string;
+  last_known_sell_price_baht: number;
+  repair_price_total: number;
+  show_repair_on_label: boolean;
 };
 
 export function CreateProductForm({
@@ -21,9 +31,61 @@ export function CreateProductForm({
   const [sellPrice, setSellPrice] = useState(0);
   const [repairPrice, setRepairPrice] = useState(0);
   const [notes, setNotes] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [phase, setPhase] = useState<Phase>("form");
+  const [createdRecordId, setCreatedRecordId] = useState<string | null>(null);
+  const [skuResult, setSkuResult] = useState<SkuResult | null>(null);
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, []);
+
+  const pollForSku = useCallback(
+    (recordId: string, attempt: number) => {
+      if (attempt >= 5) {
+        setPhase("timeout");
+        return;
+      }
+
+      pollRef.current = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/inventory/${recordId}`);
+          if (!res.ok) throw new Error("Fetch failed");
+          const data = await res.json();
+
+          if (data.sku) {
+            setSkuResult(data);
+            setPhase("print-ready");
+            return;
+          }
+        } catch {
+          // continue polling
+        }
+        pollForSku(recordId, attempt + 1);
+      }, 2000);
+    },
+    []
+  );
+
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoPreview(URL.createObjectURL(file));
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
 
   const canSave = displayName.trim() && category;
 
@@ -44,6 +106,7 @@ export function CreateProductForm({
           last_known_sell_price_baht: sellPrice || undefined,
           repair_price_total: repairPrice || undefined,
           notes: notes || undefined,
+          ...(photoBase64 ? { product_photo: photoBase64 } : {}),
         }),
       });
 
@@ -53,19 +116,138 @@ export function CreateProductForm({
       }
 
       const result = await res.json();
-      showToast("✅ สร้างสินค้าใหม่แล้ว (Product created!)", "success");
+      showToast("สร้างสินค้าใหม่แล้ว (Product created!)", "success");
       onCreated({
         id: result.id,
         display_name: displayName.trim(),
       });
+
+      setCreatedRecordId(result.id);
+      setPhase("polling-sku");
+      pollForSku(result.id, 0);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Create failed"
       );
-      showToast("❌ เกิดข้อผิดพลาด (Error — please try again)", "error");
+      showToast("เกิดข้อผิดพลาด (Error — please try again)", "error");
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleDone() {
+    if (pollRef.current) clearTimeout(pollRef.current);
+    onClose();
+  }
+
+  if (phase === "polling-sku") {
+    return (
+      <div className="bg-surface rounded-xl p-4 border border-blue-700 space-y-4 animate-slide-up">
+        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+          <div className="text-4xl animate-spin">⏳</div>
+          <div className="text-center">
+            <p className="text-white font-bold">
+              กำลังสร้างรหัสสินค้า...
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Generating SKU...
+            </p>
+          </div>
+          <p className="text-sm text-slate-400">
+            {displayName.trim()}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "print-ready" && skuResult) {
+    const labelBase =
+      process.env.NEXT_PUBLIC_LABEL_API_URL ||
+      "https://pinit-label-api.onrender.com";
+
+    return (
+      <div className="bg-surface rounded-xl p-4 border border-emerald-700 space-y-4 animate-slide-up">
+        <div className="text-center space-y-2">
+          <div className="text-3xl">🏷</div>
+          <h3 className="text-white font-bold text-lg">
+            {skuResult.display_name}
+          </h3>
+          <div className="text-emerald-400 font-mono text-xl font-bold">
+            {skuResult.sku}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs text-slate-400 mb-2">
+            พิมพ์ฉลาก (Print Label)
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {(["40x20", "40x30", "70x30", "70x50"] as const).map(
+              (size) => (
+                <button
+                  key={size}
+                  onClick={() => {
+                    let url =
+                      labelBase +
+                      "/label/" +
+                      encodeURIComponent(skuResult.sku) +
+                      "/" +
+                      size +
+                      "?name=" +
+                      encodeURIComponent(skuResult.display_name) +
+                      "&price=" +
+                      skuResult.last_known_sell_price_baht;
+                    if (
+                      skuResult.repair_price_total > 0 &&
+                      skuResult.show_repair_on_label
+                    ) {
+                      url += "&repair=" + skuResult.repair_price_total;
+                    }
+                    window.open(url, "_blank");
+                  }}
+                  className="py-2 rounded-lg border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400 text-xs transition-colors"
+                >
+                  {size.replace("x", "×")}
+                </button>
+              )
+            )}
+          </div>
+        </div>
+
+        <button
+          onClick={handleDone}
+          className="w-full py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+        >
+          เสร็จสิ้น (Done)
+        </button>
+      </div>
+    );
+  }
+
+  if (phase === "timeout") {
+    return (
+      <div className="bg-surface rounded-xl p-4 border border-yellow-700 space-y-4 animate-slide-up">
+        <div className="text-center space-y-2 py-4">
+          <div className="text-3xl">⏱</div>
+          <p className="text-yellow-400 font-bold">
+            รหัสยังไม่พร้อม
+          </p>
+          <p className="text-xs text-slate-400">
+            ค้นหาอีกครั้งเพื่อพิมพ์ฉลาก
+          </p>
+          <p className="text-xs text-slate-500 mt-2">
+            SKU not ready yet — search again later to print label
+          </p>
+        </div>
+        <button
+          onClick={handleDone}
+          className="w-full py-3 rounded-xl font-bold text-white bg-slate-600 hover:bg-slate-500 transition-colors"
+        >
+          ปิด (Close)
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -73,7 +255,7 @@ export function CreateProductForm({
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-white font-bold">
-            ➕ สร้างสินค้าใหม่
+            สร้างสินค้าใหม่
           </h3>
           <p className="text-xs text-slate-400">
             Create New Product
@@ -216,8 +398,43 @@ export function CreateProductForm({
         />
       </div>
 
+      <div>
+        <label className="text-xs text-slate-400">
+          รูปสินค้า (Product Photo)
+        </label>
+        <div className="flex items-center gap-3 mt-1">
+          {photoPreview ? (
+            <img
+              src={photoPreview}
+              alt="Preview"
+              className="w-20 h-20 object-contain rounded-lg bg-surface-dark flex-shrink-0"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-lg bg-surface-dark flex items-center justify-center text-slate-600 flex-shrink-0">
+              📦
+            </div>
+          )}
+          <div className="flex-1">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
+            >
+              📷 {photoPreview ? "ถ่ายใหม่ (Retake)" : "ถ่ายรูป (Take Photo)"}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="text-xs text-emerald-400">
-        ☑ นับแล้ว (auto-checked for new products)
+        นับแล้ว (auto-checked for new products)
       </div>
 
       {error && <div className="text-sm text-red-400">{error}</div>}
@@ -233,7 +450,7 @@ export function CreateProductForm({
             กำลังสร้าง...
           </span>
         ) : (
-          "💾 สร้างและบันทึก (Create & Save)"
+          "สร้างและบันทึก (Create & Save)"
         )}
       </button>
 

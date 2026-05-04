@@ -37,6 +37,8 @@ export async function POST(request: Request) {
     if (data.repair_price_total)
       fields.repair_price_total = data.repair_price_total;
     if (data.notes) fields.notes = data.notes;
+    if (data.product_photo)
+      fields.product_photo = [{ url: data.product_photo }];
 
     const record = await createRecord(TABLES.PRODUCTS, fields);
 
