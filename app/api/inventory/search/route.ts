@@ -31,8 +31,13 @@ export async function GET(request: NextRequest) {
       return Response.json([]);
     }
 
+    const hasLatin = /[a-zA-Z]/;
     const wordClauses = words.map((word) => {
       const s = sanitizeForFormula(word);
+      if (hasLatin.test(word)) {
+        const lower = s.toLowerCase();
+        return `OR(SEARCH("${lower}", LOWER({display_name})), SEARCH("${lower}", LOWER({original_name})))`;
+      }
       return `OR(SEARCH("${s}", {display_name}), SEARCH("${s}", {original_name}))`;
     });
     const formula =
