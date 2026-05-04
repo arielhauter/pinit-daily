@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       const s = sanitizeForFormula(word);
       if (hasLatin.test(word)) {
         const lower = s.toLowerCase();
-        return `OR(SEARCH("${lower}", LOWER({display_name})), SEARCH("${lower}", LOWER({original_name})), SEARCH("${lower}", LOWER({sku})))`;
+        return `OR(SEARCH("${lower}", LOWER({display_name})), SEARCH("${lower}", LOWER({original_name})), SEARCH("${s}", {sku}))`;
       }
       return `OR(SEARCH("${s}", {display_name}), SEARCH("${s}", {original_name}))`;
     });
