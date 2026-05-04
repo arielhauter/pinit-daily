@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const sanitized = sanitizeForFormula(query.toLowerCase());
+    const sanitized = sanitizeForFormula(query);
     const records = await selectRecords(TABLES.PRODUCTS, {
-      filterByFormula: `OR(SEARCH("${sanitized}", LOWER({display_name})), SEARCH("${sanitized}", LOWER({original_name})))`,
+      filterByFormula: `OR(SEARCH("${sanitized}", {display_name}), SEARCH("${sanitized}", {original_name}))`,
       fields: [
         "sku",
         "display_name",
