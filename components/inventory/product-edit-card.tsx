@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useToast } from "@/components/toast";
+import { compressImage } from "@/lib/compress-image";
 import type { InventoryProduct } from "@/lib/types";
 
 type Props = {
@@ -27,21 +28,19 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
     product.photo_url
   );
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saveState, setSaveState] = useState<
     "idle" | "success" | "error"
   >("idle");
 
-  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoPreview(URL.createObjectURL(file));
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhotoBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    const compressed = await compressImage(file);
+    setPhotoBase64(compressed);
   }
 
   async function handleSave() {
@@ -146,9 +145,17 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
               📦
             </div>
           )}
-          <div className="flex-1">
+          <div className="flex-1 flex gap-2">
             <input
-              ref={photoInputRef}
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
+            <input
+              ref={galleryInputRef}
               type="file"
               accept="image/*"
               onChange={handlePhotoSelect}
@@ -156,10 +163,17 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
             />
             <button
               type="button"
-              onClick={() => photoInputRef.current?.click()}
+              onClick={() => cameraInputRef.current?.click()}
               className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
             >
-              📷 {photoPreview ? "ถ่ายใหม่ (Retake)" : "ถ่ายรูป (Take Photo)"}
+              📷 ถ่ายรูป (Take Photo)
+            </button>
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
+            >
+              🖼️ เลือกรูป (Choose Photo)
             </button>
           </div>
         </div>

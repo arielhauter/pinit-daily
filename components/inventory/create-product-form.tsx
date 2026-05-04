@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/components/toast";
+import { compressImage } from "@/lib/compress-image";
 
 type Props = {
   categories: string[];
@@ -33,7 +34,8 @@ export function CreateProductForm({
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -76,15 +78,12 @@ export function CreateProductForm({
     []
   );
 
-  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoPreview(URL.createObjectURL(file));
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhotoBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    const compressed = await compressImage(file);
+    setPhotoBase64(compressed);
   }
 
   const canSave = displayName.trim() && category;
@@ -414,9 +413,17 @@ export function CreateProductForm({
               📦
             </div>
           )}
-          <div className="flex-1">
+          <div className="flex-1 flex gap-2">
             <input
-              ref={photoInputRef}
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
+            <input
+              ref={galleryInputRef}
               type="file"
               accept="image/*"
               onChange={handlePhotoSelect}
@@ -424,17 +431,24 @@ export function CreateProductForm({
             />
             <button
               type="button"
-              onClick={() => photoInputRef.current?.click()}
+              onClick={() => cameraInputRef.current?.click()}
               className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
             >
-              📷 {photoPreview ? "ถ่ายใหม่ (Retake)" : "ถ่ายรูป (Take Photo)"}
+              📷 ถ่ายรูป (Take Photo)
+            </button>
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
+            >
+              🖼️ เลือกรูป (Choose Photo)
             </button>
           </div>
         </div>
       </div>
 
-      <div className="text-xs text-emerald-400">
-        นับแล้ว (auto-checked for new products)
+      <div className="w-full py-3 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold bg-emerald-600/20 border border-emerald-600 text-emerald-400">
+        ☑ นับแล้ว (Counted) ✓
       </div>
 
       {error && <div className="text-sm text-red-400">{error}</div>}

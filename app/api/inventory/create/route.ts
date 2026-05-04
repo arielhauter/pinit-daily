@@ -21,10 +21,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const categoryValue = String(data.category).trim();
+
     const fields: Record<string, unknown> = {
       display_name: data.display_name,
       current_stock: data.current_stock,
-      category: data.category,
+      category: categoryValue,
       has_been_counted: true,
       counted_date: new Date().toISOString().split("T")[0],
       counted_by: data.counted_by || "app",

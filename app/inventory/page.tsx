@@ -78,7 +78,9 @@ export default function InventoryPage() {
   }
 
   const categories =
-    progress?.categories.map((c) => c.category) || [];
+    progress?.categories
+      .map((c) => c.category)
+      .filter((c) => c !== "ไม่มีหมวดหมู่ (Uncategorized)") || [];
   const displayCategories = showAllCategories
     ? progress?.categories || []
     : (progress?.categories || []).slice(0, 5);
