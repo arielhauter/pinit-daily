@@ -166,11 +166,22 @@ export default function UploadPage() {
         </button>
       )}
 
-      <div className="text-center">
+      <div className="text-center space-y-2">
         <p className="text-xs text-slate-500">── ดูสรุปวันก่อนหน้า ──</p>
-        <button className="text-sm text-slate-400 hover:text-white transition-colors mt-1">
+        <button className="text-sm text-slate-400 hover:text-white transition-colors">
           ◄ ดูผลวันวาน (View yesterday&apos;s result)
         </button>
+      </div>
+
+      <div className="text-center pt-2">
+        <a
+          href="/inventory"
+          className="inline-block bg-surface rounded-xl px-6 py-3 border border-slate-700 hover:border-slate-500 transition-colors"
+        >
+          <div className="text-lg">📦</div>
+          <div className="text-sm text-white font-semibold">นับสต็อก</div>
+          <div className="text-xs text-slate-400">Inventory Count</div>
+        </a>
       </div>
     </div>
   );

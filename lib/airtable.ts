@@ -72,6 +72,21 @@ export async function selectRecords(
   return allRecords;
 }
 
+export async function updateRecord(
+  table: string,
+  recordId: string,
+  fields: Record<string, unknown>
+): Promise<AirtableRecord> {
+  const res = await airtableFetch(
+    `${encodeURIComponent(table)}/${recordId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ fields }),
+    }
+  );
+  return res.json();
+}
+
 export async function createRecord(
   table: string,
   fields: Record<string, unknown>

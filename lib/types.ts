@@ -83,6 +83,43 @@ export type StreakData = {
   weekView: boolean[];
 };
 
+export type InventoryProduct = {
+  id: string;
+  sku: string;
+  display_name: string;
+  original_name: string;
+  category: string;
+  current_stock: number;
+  last_known_cost_baht: number;
+  last_known_sell_price_baht: number;
+  repair_price_total: number;
+  notes: string;
+  has_been_counted: boolean;
+  photo_url: string | null;
+  counted_date: string | null;
+  counted_by: string | null;
+};
+
+export type CategoryProgress = {
+  category: string;
+  counted: number;
+  total: number;
+};
+
+export type RecentlyCountedItem = {
+  id: string;
+  display_name: string;
+  current_stock: number;
+  counted_date: string | null;
+};
+
+export type InventoryProgress = {
+  counted: number;
+  total: number;
+  categories: CategoryProgress[];
+  recentlyCounted: RecentlyCountedItem[];
+};
+
 export type ReconcilePayload = {
   date: string;
   extraction: ExtractionResult;
