@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       starting_balance: data.extraction.starting_balance,
       total_cash_sales: data.activity.sales.cash_total,
       total_cash_refunds: 0,
-      delivery_cash_paid:
+      total_delivery_fees:
         data.extraction.delivery_am + data.extraction.delivery_pm,
       other_cash_in: sumSectionC(data.extraction.section_c_items, "in"),
       other_cash_out: sumSectionC(data.extraction.section_c_items, "out"),
