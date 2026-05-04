@@ -53,7 +53,7 @@ export function CreateProductForm({
 
   const pollForSku = useCallback(
     (recordId: string, attempt: number) => {
-      if (attempt >= 5) {
+      if (attempt >= 15) {
         setPhase("timeout");
         return;
       }
@@ -252,6 +252,15 @@ export function CreateProductForm({
             SKU not ready yet — search again later to print label
           </p>
         </div>
+        <button
+          onClick={() => {
+            setPhase("polling-sku");
+            pollForSku(createdRecordId!, 0);
+          }}
+          className="w-full py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+        >
+          🔄 ลองอีกครั้ง (Try Again)
+        </button>
         <button
           onClick={handleDone}
           className="w-full py-3 rounded-xl font-bold text-white bg-slate-600 hover:bg-slate-500 transition-colors"
