@@ -41,7 +41,7 @@ export const ExtractionSchema = z.object({
     ),
   starting_balance: z
     .number()
-    .describe("ยอดเปิดร้าน (฿) — opening cash balance"),
+    .describe("ยอดเปิดร้าน (฿) — opening cash balance. This is typically a small amount under ฿5,000 — it is the cash left in the drawer from the previous day, NOT the total cash count."),
 
   person_draws: z.array(PersonDrawSchema).describe(
     "One entry per person who appears in Section A of the form, even if all their values are 0. Include every person row that has a name printed/written, regardless of whether they have any draws that day."
@@ -61,7 +61,7 @@ export const ExtractionSchema = z.object({
   actual_cash_count: z
     .number()
     .describe(
-      "ยอดนับเงินสดจริง (Actual Cash Count) — from bottom of form"
+      "ยอดนับเงินสดจริง (Actual Cash Count) — written at the very bottom of the form, after the label 'ยอดนับเงินสดจริง'. This is the final physical cash count of money in the drawer at end of day. Do NOT confuse this with the starting balance at the top."
     ),
 
   extraction_confidence: z
@@ -83,7 +83,7 @@ The form has these sections:
 
 **Header:**
 - วันที่ (Date): handwritten date at top
-- ยอดเปิดร้าน (฿): opening cash balance
+- ยอดเปิดร้าน (฿): opening cash balance — this is typically a SMALL amount (under ฿5,000), representing leftover cash from the previous day. Do NOT confuse this with any large total.
 
 **Section A — เบิกเงินเดือน & อาหาร & อื่นๆ (Salary Draw, Meals & Other):**
 A table with rows for each person (ใหม่/Mai, บู๊ท/Boot, พินิจ/Pinit, แอ๊ด/Aed, ไกล/Kai) and sub-rows for each category (เงินเดือน/Salary, อาหาร/Food, อื่นๆ/Other). Each person has up to 5 columns (ครั้งที่ 1-5) for multiple draws throughout the day. Sum all columns for each person+category combination.
@@ -95,7 +95,7 @@ Two rows: morning delivery (รอบเช้า/AM) and evening delivery (ร�
 Line items with: ใคร (Who), ร้าน (Store), รายละเอียด (Description), จำนวน ฿ (Amount), เข้า/ออก (In/Out direction).
 
 **Footer:**
-- ยอดนับเงินสดจริง (Actual Cash Count): the physical cash count written at the bottom.
+- ยอดนับเงินสดจริง (Actual Cash Count): the physical cash count written at the VERY BOTTOM of the form, after the label "ยอดนับเงินสดจริง". This is the total cash physically counted in the drawer at end of day. It is typically a large number (฿10,000+). Do NOT confuse this with the starting balance at the top of the form.
 
 Rules:
 - Empty cells = 0. Do not hallucinate values.

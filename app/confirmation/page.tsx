@@ -41,7 +41,7 @@ export default function ConfirmationPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-6">
-      <Confetti />
+      {data.variance === 0 && <Confetti />}
 
       <div className="text-center">
         <div className="text-5xl mb-3">🎉</div>

@@ -14,52 +14,60 @@ function sumSectionC(
 }
 
 export async function POST(request: Request) {
-  const data: ReconcilePayload = await request.json();
+  try {
+    const data: ReconcilePayload = await request.json();
 
-  const drawsToCreate = data.extraction.person_draws
-    .filter((p) => p.salary > 0 || p.food > 0 || p.other > 0)
-    .map((person) => ({
+    const drawsToCreate = data.extraction.person_draws
+      .filter((p) => p.salary > 0 || p.food > 0 || p.other > 0)
+      .map((person) => ({
+        date: data.date,
+        person: normalizeName(person.name),
+        salary: person.salary,
+        food: person.food,
+        other: person.other,
+      }));
+
+    let drawRecordIds: string[] = [];
+    if (drawsToCreate.length > 0) {
+      const drawRecords = await createRecords(
+        TABLES.DAILY_PERSON_DRAWS,
+        drawsToCreate
+      );
+      drawRecordIds = drawRecords.map((r) => r.id);
+    }
+
+    const reconciliationFields: Record<string, unknown> = {
       date: data.date,
-      person: normalizeName(person.name),
-      salary: person.salary,
-      food: person.food,
-      other: person.other,
-    }));
+      starting_balance: data.extraction.starting_balance,
+      total_cash_sales: data.activity.sales.cash_total,
+      total_cash_refunds: 0,
+      delivery_cash_paid:
+        data.extraction.delivery_am + data.extraction.delivery_pm,
+      other_cash_in: sumSectionC(data.extraction.section_c_items, "in"),
+      other_cash_out: sumSectionC(data.extraction.section_c_items, "out"),
+      actual_count: data.extraction.actual_cash_count,
+      notes: data.note || "",
+      section_c_detail: JSON.stringify(data.extraction.section_c_items),
+      extraction_confidence: data.extraction.extraction_confidence,
+      entered_via: "app",
+    };
 
-  let drawRecordIds: string[] = [];
-  if (drawsToCreate.length > 0) {
-    const drawRecords = await createRecords(
-      TABLES.DAILY_PERSON_DRAWS,
-      drawsToCreate
+    if (drawRecordIds.length > 0) {
+      reconciliationFields.person_draws = drawRecordIds;
+    }
+
+    await createRecord(TABLES.DAILY_CASH_RECONCILIATION, reconciliationFields);
+
+    const streak = await calculateStreak(data.date);
+
+    return Response.json({ success: true, streak });
+  } catch (err) {
+    console.error("Reconcile error:", err);
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Failed to save reconciliation" },
+      { status: 500 }
     );
-    drawRecordIds = drawRecords.map((r) => r.id);
   }
-
-  const reconciliationFields: Record<string, unknown> = {
-    date: data.date,
-    starting_balance: data.extraction.starting_balance,
-    total_cash_sales: data.activity.sales.cash_total,
-    total_cash_refunds: 0,
-    delivery_cash_paid:
-      data.extraction.delivery_am + data.extraction.delivery_pm,
-    other_cash_in: sumSectionC(data.extraction.section_c_items, "in"),
-    other_cash_out: sumSectionC(data.extraction.section_c_items, "out"),
-    actual_count: data.extraction.actual_cash_count,
-    notes: data.note || "",
-    section_c_detail: JSON.stringify(data.extraction.section_c_items),
-    extraction_confidence: data.extraction.extraction_confidence,
-    entered_via: "app",
-  };
-
-  if (drawRecordIds.length > 0) {
-    reconciliationFields.person_draws = drawRecordIds;
-  }
-
-  await createRecord(TABLES.DAILY_CASH_RECONCILIATION, reconciliationFields);
-
-  const streak = await calculateStreak(data.date);
-
-  return Response.json({ success: true, streak });
 }
 
 async function calculateStreak(fromDate: string): Promise<number> {
