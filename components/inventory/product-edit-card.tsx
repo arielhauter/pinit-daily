@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useToast } from "@/components/toast";
 import type { InventoryProduct } from "@/lib/types";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function ProductEditCard({ product, onSave, onClose }: Props) {
+  const { showToast } = useToast();
   const [stock, setStock] = useState(product.current_stock);
   const [cost, setCost] = useState(product.last_known_cost_baht);
   const [sellPrice, setSellPrice] = useState(
@@ -69,6 +71,7 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
       if (!res.ok) throw new Error("Save failed");
 
       setSaveState("success");
+      showToast("✅ บันทึกแล้ว (Saved!)", "success");
       onSave({
         ...product,
         current_stock: stock,
@@ -83,6 +86,7 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
       setTimeout(onClose, 1500);
     } catch {
       setSaveState("error");
+      showToast("❌ เกิดข้อผิดพลาด (Error — please try again)", "error");
     } finally {
       setSaving(false);
     }

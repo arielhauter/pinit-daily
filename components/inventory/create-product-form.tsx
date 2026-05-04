@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/toast";
 
 type Props = {
   categories: string[];
@@ -20,6 +21,7 @@ export function CreateProductForm({
   const [sellPrice, setSellPrice] = useState(0);
   const [repairPrice, setRepairPrice] = useState(0);
   const [notes, setNotes] = useState("");
+  const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,6 +53,7 @@ export function CreateProductForm({
       }
 
       const result = await res.json();
+      showToast("✅ สร้างสินค้าใหม่แล้ว (Product created!)", "success");
       onCreated({
         id: result.id,
         display_name: displayName.trim(),
@@ -59,6 +62,7 @@ export function CreateProductForm({
       setError(
         err instanceof Error ? err.message : "Create failed"
       );
+      showToast("❌ เกิดข้อผิดพลาด (Error — please try again)", "error");
     } finally {
       setSaving(false);
     }
