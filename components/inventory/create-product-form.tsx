@@ -94,6 +94,19 @@ export function CreateProductForm({
     setError("");
 
     try {
+      let photoUrl: string | undefined;
+      if (photoBase64) {
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64: photoBase64 }),
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          photoUrl = uploadData.url;
+        }
+      }
+
       const res = await fetch("/api/inventory/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,7 +118,7 @@ export function CreateProductForm({
           last_known_sell_price_baht: sellPrice || undefined,
           repair_price_total: repairPrice || undefined,
           notes: notes || undefined,
-          ...(photoBase64 ? { product_photo: photoBase64 } : {}),
+          ...(photoUrl ? { product_photo: photoUrl } : {}),
         }),
       });
 

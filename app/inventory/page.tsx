@@ -68,12 +68,7 @@ export default function InventoryPage() {
     fetchProgress();
   }
 
-  function handleCreated(record: {
-    id: string;
-    display_name: string;
-  }) {
-    setShowCreate(false);
-    setQuery(record.display_name);
+  function handleCreated() {
     fetchProgress();
   }
 

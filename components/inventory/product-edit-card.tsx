@@ -48,6 +48,19 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
     setSaveState("idle");
 
     try {
+      let photoUrl: string | undefined;
+      if (photoBase64) {
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64: photoBase64 }),
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          photoUrl = uploadData.url;
+        }
+      }
+
       const today = new Date().toISOString().split("T")[0];
       const res = await fetch("/api/inventory/update", {
         method: "POST",
@@ -64,7 +77,7 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
             has_been_counted: counted,
             counted_date: counted ? today : product.counted_date,
             counted_by: counted ? "app" : product.counted_by,
-            ...(photoBase64 ? { product_photo: photoBase64 } : {}),
+            ...(photoUrl ? { product_photo: photoUrl } : {}),
           },
         }),
       });
