@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         "repair_price_total",
         "notes",
         "has_been_counted",
-        "Product Photo",
+        "product_photo",
         "counted_date",
         "counted_by",
       ],
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       repair_price_total: (r.fields.repair_price_total as number) || 0,
       notes: (r.fields.notes as string) || "",
       has_been_counted: (r.fields.has_been_counted as boolean) || false,
-      photo_url: extractPhotoUrl(r.fields["Product Photo"]),
+      photo_url: extractPhotoUrl(r.fields["product_photo"]),
       counted_date: (r.fields.counted_date as string) || null,
       counted_by: (r.fields.counted_by as string) || null,
     }));
