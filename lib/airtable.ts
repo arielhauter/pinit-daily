@@ -41,29 +41,35 @@ export async function selectRecords(
     maxRecords?: number;
   } = {}
 ): Promise<AirtableRecord[]> {
-  const query = new URLSearchParams();
-  if (params.filterByFormula) {
-    query.set("filterByFormula", params.filterByFormula);
-  }
+  const formulaPart = params.filterByFormula
+    ? `filterByFormula=${encodeURIComponent(params.filterByFormula)}`
+    : "";
+
+  const otherParams = new URLSearchParams();
   if (params.fields) {
-    params.fields.forEach((f) => query.append("fields[]", f));
+    params.fields.forEach((f) => otherParams.append("fields[]", f));
   }
   if (params.sort) {
     params.sort.forEach((s, i) => {
-      query.set(`sort[${i}][field]`, s.field);
-      query.set(`sort[${i}][direction]`, s.direction);
+      otherParams.set(`sort[${i}][field]`, s.field);
+      otherParams.set(`sort[${i}][direction]`, s.direction);
     });
   }
   if (params.maxRecords) {
-    query.set("maxRecords", String(params.maxRecords));
+    otherParams.set("maxRecords", String(params.maxRecords));
   }
 
   const allRecords: AirtableRecord[] = [];
   let offset: string | undefined;
 
   do {
-    if (offset) query.set("offset", offset);
-    const res = await airtableFetch(`${encodeURIComponent(table)}?${query.toString()}`);
+    if (offset) otherParams.set("offset", offset);
+    const parts: string[] = [];
+    if (formulaPart) parts.push(formulaPart);
+    const otherStr = otherParams.toString();
+    if (otherStr) parts.push(otherStr);
+    const queryString = parts.join("&");
+    const res = await airtableFetch(`${encodeURIComponent(table)}?${queryString}`);
     const data: AirtableListResponse = await res.json();
     allRecords.push(...data.records);
     offset = data.offset;
