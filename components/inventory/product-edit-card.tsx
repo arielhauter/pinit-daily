@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { InventoryProduct } from "@/lib/types";
 
 type Props = {
@@ -20,12 +20,26 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
   );
   const [notes, setNotes] = useState(product.notes);
   const [counted, setCounted] = useState(product.has_been_counted);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(
+    product.photo_url
+  );
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saveState, setSaveState] = useState<
     "idle" | "success" | "error"
   >("idle");
 
-  const labelApiUrl = process.env.NEXT_PUBLIC_LABEL_API_URL;
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoPreview(URL.createObjectURL(file));
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -47,6 +61,7 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
             has_been_counted: counted,
             counted_date: counted ? today : product.counted_date,
             counted_by: counted ? "app" : product.counted_by,
+            ...(photoBase64 ? { product_photo: photoBase64 } : {}),
           },
         }),
       });
@@ -99,13 +114,40 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
         </button>
       </div>
 
-      {product.photo_url && (
-        <img
-          src={product.photo_url}
-          alt={product.display_name}
-          className="w-full h-32 object-contain rounded-lg bg-surface-dark"
-        />
-      )}
+      <div>
+        <label className="text-xs text-slate-400">
+          รูปสินค้า (Product Photo)
+        </label>
+        <div className="flex items-center gap-3 mt-1">
+          {photoPreview ? (
+            <img
+              src={photoPreview}
+              alt={product.display_name}
+              className="w-20 h-20 object-contain rounded-lg bg-surface-dark flex-shrink-0"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-lg bg-surface-dark flex items-center justify-center text-slate-600 flex-shrink-0">
+              📦
+            </div>
+          )}
+          <div className="flex-1">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
+            >
+              📷 {photoPreview ? "ถ่ายใหม่ (Retake)" : "ถ่ายรูป (Take Photo)"}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div>
         <label className="text-sm text-slate-300">
@@ -242,18 +284,35 @@ export function ProductEditCard({ product, onSave, onClose }: Props) {
         )}
       </button>
 
-      {labelApiUrl && product.id && (
-        <button
-          onClick={() =>
-            window.open(
-              `${labelApiUrl}/label/${product.id}`,
-              "_blank"
-            )
-          }
-          className="w-full py-2 rounded-xl border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400 text-sm transition-colors"
-        >
-          🏷 พิมพ์ฉลาก (Print Label)
-        </button>
+      {product.sku && (
+        <div>
+          <div className="text-xs text-slate-400 mb-2">
+            🏷 พิมพ์ฉลาก (Print Label)
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {(["40x20", "40x30", "70x30", "70x50"] as const).map((size) => (
+              <button
+                key={size}
+                onClick={() => {
+                  const base = process.env.NEXT_PUBLIC_LABEL_API_URL || "https://pinit-label-api.onrender.com";
+                  let url =
+                    base + "/label/" +
+                    encodeURIComponent(product.sku) +
+                    "/" + size +
+                    "?name=" + encodeURIComponent(product.display_name) +
+                    "&price=" + sellPrice;
+                  if (repairPrice > 0) {
+                    url += "&repair=" + repairPrice;
+                  }
+                  window.open(url, "_blank");
+                }}
+                className="py-2 rounded-lg border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400 text-xs transition-colors"
+              >
+                {size.replace("x", "×")}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

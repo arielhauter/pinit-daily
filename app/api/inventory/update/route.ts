@@ -31,6 +31,9 @@ export async function POST(request: Request) {
       updateFields.counted_date = fields.counted_date;
     if (fields.counted_by !== undefined)
       updateFields.counted_by = fields.counted_by;
+    if (fields.product_photo) {
+      updateFields.product_photo = [{ url: fields.product_photo }];
+    }
 
     const record = await updateRecord(
       TABLES.PRODUCTS,
