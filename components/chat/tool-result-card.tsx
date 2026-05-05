@@ -29,6 +29,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
+            alert("tap works");
             if (p.stock > 0 && onAction) {
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
