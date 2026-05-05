@@ -27,13 +27,19 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           key={p.id}
           role="button"
           tabIndex={0}
-          onClick={() => {
-            console.log("card clicked", p.name, "onAction:", !!onAction, "stock:", p.stock);
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            console.log("CARD TAPPED via pointerdown", p.name, "onAction:", !!onAction);
+            alert("Card tapped! " + p.name);
             if (p.stock > 0 && onAction) {
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
           }}
-          className={`border-2 border-red-500 bg-slate-800 border-l-4 border-l-sky-400 rounded-r-lg p-3 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log("CARD CLICKED via onclick", p.name, "onAction:", !!onAction, "stock:", p.stock);
+          }}
+          className={`border-2 border-red-500 bg-slate-800 border-l-4 border-l-sky-400 rounded-r-lg p-3 relative z-50 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
           <div className="font-medium text-slate-100">📦 {p.name}</div>
           <div className="text-xs text-slate-400 mt-1">SKU: {p.sku}</div>
