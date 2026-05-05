@@ -81,7 +81,6 @@ export default function ChatPage() {
                           invocation.state === "result" ? invocation.result : undefined
                         }
                         onAction={(message) => append({ role: "user", content: message })}
-                        disabled={isLoading}
                       />
                     ))}
                   </div>
