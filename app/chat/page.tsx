@@ -81,10 +81,7 @@ export default function ChatPage() {
                           invocation.state === "result" ? invocation.result : undefined
                         }
                         onAction={(message: string) => {
-                          console.log('onAction fired:', message);
-                          setTimeout(() => {
-                            append({ role: 'user', content: message });
-                          }, 0);
+                          append({ role: 'user', content: message });
                         }}
                       />
                     ))}
