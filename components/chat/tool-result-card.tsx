@@ -25,12 +25,15 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
       {data.products.map((p) => (
         <div
           key={p.id}
+          role="button"
+          tabIndex={0}
           onClick={() => {
+            console.log("card clicked", p.name, "onAction:", !!onAction, "stock:", p.stock);
             if (p.stock > 0 && onAction) {
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
           }}
-          className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          className={`border-2 border-red-500 bg-slate-800 border-l-4 border-l-sky-400 rounded-r-lg p-3 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
           <div className="font-medium text-slate-100">📦 {p.name}</div>
           <div className="text-xs text-slate-400 mt-1">SKU: {p.sku}</div>
