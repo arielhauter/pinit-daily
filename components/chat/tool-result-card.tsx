@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 interface ToolResultCardProps {
   toolName: string;
   state: string;
@@ -16,7 +18,8 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
   cost: number; sellPrice: number; repairPrice: number | null;
   category: string; photoUrl: string | null;
 }> }; onAction?: (message: string) => void }) {
-  console.log("ProductCards render — onAction:", typeof onAction);
+  const tapped = useRef(false);
+
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบสินค้า</p>;
   }
@@ -30,12 +33,10 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            console.log("onPointerDown — onAction type:", typeof onAction, "stock:", p.stock);
-            if (onAction) {
-              console.log("Calling onAction with:", `ขายสินค้า ${p.name} (${p.sku})`);
+            if (tapped.current) return;
+            if (p.stock > 0 && onAction) {
+              tapped.current = true;
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
-            } else {
-              console.log("ERROR: onAction is undefined");
             }
           }}
           className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
@@ -95,6 +96,8 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
   licensePlate: string; status: string; jobType: string[];
   quotedPrice: number; quotedDate: string;
 }> }; onAction?: (message: string) => void }) {
+  const tapped = useRef(false);
+
   const statusColor: Record<string, string> = {
     "รับงาน (Quoting)": "bg-blue-500",
     "กำลังซ่อม (In Progress)": "bg-yellow-500",
@@ -121,7 +124,11 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            onAction?.(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
+            if (tapped.current) return;
+            if (onAction) {
+              tapped.current = true;
+              onAction(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
+            }
           }}
           className={`bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
@@ -155,6 +162,8 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
   id: string; name: string; phone: string | null;
   creditBalance: number; salesCount: number; repairJobsCount: number;
 }> }; onAction?: (message: string) => void }) {
+  const tapped = useRef(false);
+
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบลูกค้า</p>;
   }
@@ -168,7 +177,11 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            onAction?.(`ดูประวัติลูกค้า ${c.name}`);
+            if (tapped.current) return;
+            if (onAction) {
+              tapped.current = true;
+              onAction(`ดูประวัติลูกค้า ${c.name}`);
+            }
           }}
           className={`bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
@@ -195,6 +208,8 @@ function SaleConfirmationCard({ data, onAction }: { data: {
   items?: Array<{ name: string; quantity: number; unitPrice: number; lineTotal: number }>;
   total?: number; discount?: number; paymentMethod?: string;
 }; onAction?: (message: string) => void }) {
+  const tapped = useRef(false);
+
   if (!data.success) {
     return (
       <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
@@ -219,7 +234,12 @@ function SaleConfirmationCard({ data, onAction }: { data: {
       </div>
       {onAction && (
         <button
-          onPointerDown={(e) => { e.stopPropagation(); onAction("ต้องการบันทึกการขาย"); }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            if (tapped.current) return;
+            tapped.current = true;
+            onAction("ต้องการบันทึกการขาย");
+          }}
           className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full relative z-10 cursor-pointer"
         >
           📗 ขายต่อ
