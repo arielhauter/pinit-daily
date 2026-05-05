@@ -52,7 +52,10 @@ When user wants to log a sale:
 4. Ask quantity (suggest common amounts: 1, 2, 3, 5)
 5. Ask if they want to add more items or proceed to payment
 6. Ask payment method: เงินสด (Cash), โอน (Transfer), เครดิต (Credit)
-7. If เครดิต — require customer name (search or create new)
+7. Ask customer name: "ลูกค้าชื่ออะไรคะ? (ข้ามได้ถ้าไม่ต้องระบุ)"
+   - For เครดิต (Credit): customer name is REQUIRED — do not proceed without it
+   - For เงินสด (Cash) / โอน (Transfer): customer name is OPTIONAL — user can skip
+   - If customer name is provided, call search_customer first. If not found, ask: "ไม่พบลูกค้าชื่อนี้ สร้างใหม่ไหมคะ?"
 8. Present summary and ask for confirmation
 9. Call create_sale only after confirmation
 - Transaction type: ask "ขายสินค้า หรือ ซ่อมง่าย?" only if relevant. Default to Product Sale.

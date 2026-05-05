@@ -430,10 +430,16 @@ export const chatTools = {
 
         await createRecords("Sale Line Items", lineItemRecords);
 
-        const computedTotal = items.reduce(
+        const subtotal = items.reduce(
           (sum, i) => sum + i.quantity * i.unit_price,
           0
         );
+        const computedTotal = subtotal - (discount || 0);
+        const collected = total_collected || computedTotal;
+
+        await updateRecord(TABLES.SALES, saleRecord.id, {
+          total_collected: collected,
+        });
 
         return {
           success: true,
@@ -445,7 +451,7 @@ export const chatTools = {
             unitPrice: i.unit_price,
             lineTotal: i.quantity * i.unit_price,
           })),
-          total: computedTotal,
+          total: subtotal,
           discount: discount || 0,
           paymentMethod: normalizedPayment,
           customer: customer_record_id ? "linked" : null,

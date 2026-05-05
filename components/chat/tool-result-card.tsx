@@ -150,10 +150,7 @@ function CustomerCards({ data }: { data: { found: number; customers: Array<{
       {data.customers.map((c) => (
         <div
           key={c.id}
-          role="button"
-          tabIndex={0}
-          data-card-action={`ดูประวัติลูกค้า ${c.name}`}
-          className="bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 cursor-pointer active:bg-slate-700"
+          className="bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3"
         >
           <div className="font-medium text-slate-100">👤 {c.name}</div>
           {c.phone && (
