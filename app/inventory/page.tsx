@@ -86,6 +86,19 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-5 pb-8">
+      {/* Nav bar */}
+      <div className="flex items-center justify-between px-4 py-3 -mx-4 -mt-6 border-b border-slate-700 bg-slate-900">
+        <span className="text-sm font-medium text-white">📦 นับสต็อก</span>
+        <div className="flex gap-3">
+          <a href="/chat" className="text-sm text-slate-400 hover:text-white transition-colors">
+            🤖 แชท
+          </a>
+          <a href="/" className="text-sm text-slate-400 hover:text-white transition-colors">
+            🌙 ปิดร้าน
+          </a>
+        </div>
+      </div>
+
       <div className="text-center">
         <h1 className="text-xl font-bold text-white">
           📦 นับสต็อก
@@ -287,21 +300,6 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-center gap-4">
-        <a
-          href="/chat"
-          className="text-sm text-sky-400 hover:text-white transition-colors"
-        >
-          🤖 แชท
-        </a>
-        <a
-          href="/"
-          className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
-        >
-          ◄ กลับหน้าแรก
-        </a>
-      </div>
     </div>
   );
 }

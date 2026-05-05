@@ -59,6 +59,19 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-6">
+      {/* Nav bar */}
+      <div className="flex items-center justify-between px-4 py-3 -mx-4 -mt-6 border-b border-slate-700 bg-slate-900">
+        <span className="text-sm font-medium text-white">🌙 ปิดร้าน</span>
+        <div className="flex gap-3">
+          <a href="/chat" className="text-sm text-slate-400 hover:text-white transition-colors">
+            🤖 แชท
+          </a>
+          <a href="/inventory" className="text-sm text-slate-400 hover:text-white transition-colors">
+            📦 นับสต็อก
+          </a>
+        </div>
+      </div>
+
       <div className="text-center">
         <div className="text-3xl mb-2">🌙</div>
         <h1 className="text-2xl font-bold text-white">ปิดร้านวันนี้</h1>
