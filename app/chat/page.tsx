@@ -10,17 +10,10 @@ export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const formRef = useRef<HTMLFormElement>(null);
+
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } =
     useChat({ api: "/api/chat" });
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const message = (e as CustomEvent).detail;
-      append({ role: 'user', content: message });
-    };
-    window.addEventListener('chat-card-action', handler);
-    return () => window.removeEventListener('chat-card-action', handler);
-  }, [append]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -90,7 +83,10 @@ export default function ChatPage() {
                           invocation.state === "result" ? invocation.result : undefined
                         }
                         onAction={(message: string) => {
-                          window.dispatchEvent(new CustomEvent('chat-card-action', { detail: message }));
+                          handleInputChange({ target: { value: message } } as React.ChangeEvent<HTMLInputElement>);
+                          setTimeout(() => {
+                            formRef.current?.requestSubmit();
+                          }, 100);
                         }}
                       />
                     ))}
@@ -114,6 +110,7 @@ export default function ChatPage() {
 
       {/* Input */}
       <form
+        ref={formRef}
         onSubmit={handleSubmit}
         className="flex gap-2 p-3 border-t border-slate-700 bg-slate-900"
       >
