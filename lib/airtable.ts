@@ -105,6 +105,16 @@ export async function createRecord(
   return res.json();
 }
 
+export async function getRecord(
+  table: string,
+  recordId: string
+): Promise<AirtableRecord> {
+  const res = await airtableFetch(
+    `${encodeURIComponent(table)}/${recordId}`
+  );
+  return res.json();
+}
+
 export async function createRecords(
   table: string,
   records: Record<string, unknown>[]

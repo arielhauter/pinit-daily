@@ -1,0 +1,327 @@
+-----------------------------
+AUTOMATION 1: "Stock decrement on sale
+-----------------------------
+When a record is created
+In Sale Line Items table
+If product ID is not empty and quantity > 0
+Run a script:
+```
+let { recordId } = input.config();
+
+let productTable = base.getTable('Products');
+let lineItemsTable = base.getTable('Sale Line Items');
+
+// Get the sale line item
+let lineItemRecord = await lineItemsTable.selectRecordAsync(recordId);
+
+// Get linked product
+let productLinks = lineItemRecord.getCellValue('product');
+if (!productLinks || productLinks.length === 0) return;
+
+let productId = productLinks[0].id;
+
+// Get product record
+let productRecord = await productTable.selectRecordAsync(productId);
+
+let currentStock = productRecord.getCellValue('current_stock') || 0;
+let qtySold = lineItemRecord.getCellValue('quantity') || 0;
+
+// Update stock (never below 0)
+await productTable.updateRecordAsync(productId, {
+    current_stock: Math.max(0, currentStock - qtySold)
+});
+```
+CONFIGURATION
+Table = Sale Line Items
+recordId = Airtable record ID
+-----------------------------
+AUTOMATION 2: Customer Credit on Sale if Credit
+-----------------------------
+When a record matches conditions
+IF payment_method is `เครดิต (Credit)` (in Sales table)
+If Base metadata is not empty
+Create a record
+In Customer Credit table
+
+CONFIGURATION
+If Base metadata is not empty
+Table = Customer Credit
+Fields
+- date = dd/mm/yyyy
+- customer = customer (linked record)
+- type = `ซื้อเครดิต (Credit Sale)`
+- amount = `total_collected`
+- sale = `sale_id`
+- note = `สร้างอัตโนมัติจากฟอร์มขาย`
+-----------------------------
+AUTOMATION 3: Generate SKU for new products
+-----------------------------
+When a record is created
+In Products table
+Run a script
+```
+const { recordId, autoSeq } = input.config();
+const OFFSET = 376;
+const newSku = `PD69${String(Number(autoSeq) + OFFSET).padStart(6, '0')}`;
+await base.getTable('Products').updateRecordAsync(recordId, {
+    'sku': newSku,
+    'barcode': { text: newSku, type: 'text' }
+});
+console.log(`Set sku=${newSku} and barcode=${newSku} for record ${recordId}`);
+```
+CONFIGURATION
+recordId = Airtable record ID
+autoSeq = `auto_seq`
+-----------------------------
+AUTOMATION 4: Add Supplier ID when new supplier created
+-----------------------------
+When a record is created
+In Suppliers table
+Run a script
+
+CONFIGURATION
+recordId = Airtable record ID
+```
+let table = base.getTable('Suppliers');
+let recordId = input.config().recordId;
+let record = await table.selectRecordAsync(recordId, {
+    fields: ['display_name', 'supplier_type']
+});
+
+let name = record.getCellValueAsString('display_name');
+let type = record.getCellValueAsString('supplier_type');
+
+// Generate slug from display_name
+let slug = name.toLowerCase().trim()
+    .replace(/[^\w\u0e00-\u0e7f]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 30);
+
+// Add prefix based on type
+let prefix = '';
+if (type && type.includes('Shopee')) {
+    prefix = 'shopee-';
+} else if (type && type.includes('Wholesale')) {
+    prefix = 'wholesale-';
+} else {
+    prefix = 'sup-';
+}
+
+let supplierId = prefix + slug;
+
+await table.updateRecordAsync(recordId, {
+    'supplier_id': supplierId
+});
+```
+-----------------------------
+AUTOMATION 5: Create Sale & Sale Line Items when Repair Job is PAID
+-----------------------------
+When a record matches conditions
+In Repair Jobs table
+If status is `จ่ายแล้ว (Paid)` and Sales is empty
+Run a script
+```
+// ═══════════════════════════════════════════════════════════════
+// Automation: Repair Job → Paid → Create Sale + Line Items
+//
+// Trigger: When 'status' changes to 'จ่ายแล้ว (Paid)'
+// Input config: recordId = the Repair Job record ID
+// ═══════════════════════════════════════════════════════════════
+
+let config = input.config();
+let repairTable = base.getTable('Repair Jobs');
+let salesTable = base.getTable('Sales');
+let lineItemsTable = base.getTable('Sale Line Items');
+let productsTable = base.getTable('Products');
+let partsTable = base.getTable('Repair Job Parts');
+
+// ── 1. Read the Repair Job ──
+let job = await repairTable.selectRecordAsync(config.recordId, {
+    fields: [
+        'customer',
+        'total_collected',
+        'labor_charge',
+        'job_type',
+        'payment_method',
+        'parts_used',
+        'Sales',
+    ]
+});
+
+// ── 2. Skip if Sale already exists (prevent duplicates) ──
+let existingSales = job.getCellValue('Sales');
+if (existingSales && existingSales.length > 0) {
+    console.log('Sale already exists for this job, skipping.');
+    return;
+}
+
+// ── 3. Read fields ──
+let customer = job.getCellValue('customer');
+let totalCollected = Number(job.getCellValue('total_collected')) || 0;
+let laborCharge = Number(job.getCellValue('labor_charge')) || 0;
+let paymentMethod = job.getCellValueAsString('payment_method') || 'เงินสด (Cash)';
+
+let jobTypeRaw = job.getCellValue('job_type');
+let jobTypeString = '';
+if (jobTypeRaw && Array.isArray(jobTypeRaw)) {
+    jobTypeString = jobTypeRaw.map(jt => jt.name).join(', ');
+}
+
+// ── 4. Validate ──
+if (totalCollected <= 0) {
+    console.log('⚠️ WARNING: total_collected is ฿0 or empty!');
+    console.log('Mai must enter total_collected before changing status to Paid.');
+}
+
+// ── 5. Create the Sale record ──
+let saleId = await salesTable.createRecordAsync({
+    'transaction_type': {name: 'Specialized Repair'},
+    'payment_method': {name: paymentMethod},
+    'customer': customer ? [{id: customer[0].id}] : [],
+    'repair_job': [{id: config.recordId}],
+    'total_collected': totalCollected,
+    'note': 'สร้างอัตโนมัติจากงานซ่อม: ' + jobTypeString,
+});
+
+console.log('Created Sale: ' + saleId);
+
+// ── 6. Create line items for each part from Repair Job Parts ──
+let partsUsed = job.getCellValue('parts_used');
+let partsCreated = 0;
+
+if (partsUsed && partsUsed.length > 0) {
+    for (let partLink of partsUsed) {
+        let part = await partsTable.selectRecordAsync(partLink.id, {
+            fields: [
+                'product',
+                'quantity',
+                'sell_price_final',
+            ]
+        });
+
+        let productLink = part.getCellValue('product');
+        let qty = Number(part.getCellValue('quantity')) || 1;
+        let sellPrice = Number(part.getCellValue('sell_price_final')) || 0;
+
+        if (productLink && productLink.length > 0) {
+            await lineItemsTable.createRecordAsync({
+                'sale_id': [{id: saleId}],
+                'product': [{id: productLink[0].id}],
+                'quantity': qty,
+                'price_override': sellPrice,
+            });
+            partsCreated++;
+        } else {
+            console.log('⚠️ Skipped part (no product link): ' + partLink.name);
+        }
+    }
+}
+
+console.log('Created ' + partsCreated + ' parts line items.');
+
+// ── 7. Find the right labor product SKU ──
+let products = await productsTable.selectRecordsAsync({
+    fields: ['display_name', 'category']
+});
+
+let laborProduct = null;
+
+if (jobTypeRaw && Array.isArray(jobTypeRaw) && jobTypeRaw.length === 1) {
+    let jobTypeName = jobTypeRaw[0].name;
+    for (let record of products.records) {
+        let category = record.getCellValueAsString('category');
+        let name = record.getCellValueAsString('display_name');
+        if (category.includes('ค่าแรง') && name.includes(jobTypeName)) {
+            laborProduct = record;
+            break;
+        }
+    }
+}
+
+if (!laborProduct) {
+    for (let record of products.records) {
+        let category = record.getCellValueAsString('category');
+        let name = record.getCellValueAsString('display_name');
+        if (category.includes('ค่าแรง') && name.includes('งานอื่นๆ')) {
+            laborProduct = record;
+            break;
+        }
+    }
+}
+
+// ── 8. Create the labor line item ──
+if (laborProduct && laborCharge > 0) {
+    await lineItemsTable.createRecordAsync({
+        'sale_id': [{id: saleId}],
+        'product': [{id: laborProduct.id}],
+        'quantity': 1,
+        'price_override': laborCharge,
+    });
+    console.log('Labor: ' + laborProduct.getCellValueAsString('display_name') + ' @ ฿' + laborCharge);
+} else if (!laborProduct) {
+    console.log('⚠️ No labor SKU found! Check Products for category "ค่าแรง (Labor)".');
+} else {
+    console.log('ℹ️ Labor charge is ฿0, no labor line item created.');
+}
+
+// ── 9. Summary ──
+console.log('');
+console.log('═══ COMPLETE ═══');
+console.log('Sale:            ' + saleId);
+console.log('Parts items:     ' + partsCreated);
+console.log('Labor:           ฿' + laborCharge);
+console.log('Total collected: ฿' + totalCollected);
+console.log('Job types:       ' + jobTypeString);
+console.log('Payment:         ' + paymentMethod);
+```
+CONFIGURATION
+recordId = Airtable record ID
+-----------------------------
+AUTOMATION 6: Auto-timestamp on receipt
+-----------------------------
+When a record is updated
+In Purchase Line Items table
+Fields: `is_received`
+If `is_received` is checked
+Run a script (below)
+Update record `received_at`
+CONFIGURATION
+Action will run...
+If `is_received` is checked
+Table = Purchase Line Items
+Record ID = Airtable record ID
+Fields:
+- `received_at` = Actual run time
+```
+let config = input.config();
+let table = base.getTable('Purchase Line Items');
+let productsTable = base.getTable('Products');
+
+let record = await table.selectRecordAsync(config.recordId, {
+    fields: ['product', 'quantity', 'total_units_received', 'received_at']
+});
+
+// Timestamp
+await table.updateRecordAsync(config.recordId, {
+    'received_at': new Date(),
+});
+
+// Increment stock
+let productLinks = record.getCellValue('product');
+if (!productLinks || productLinks.length === 0) return;
+
+let productId = productLinks[0].id;
+let productRecord = await productsTable.selectRecordAsync(productId, {
+    fields: ['current_stock']
+});
+
+let currentStock = productRecord.getCellValue('current_stock') || 0;
+let qtyReceived = record.getCellValue('total_units_received') || record.getCellValue('quantity') || 0;
+
+await productsTable.updateRecordAsync(productId, {
+    'current_stock': currentStock + qtyReceived,
+});
+
+console.log('✅ Received: stock +' + qtyReceived + ' (now ' + (currentStock + qtyReceived) + ')');
+```
