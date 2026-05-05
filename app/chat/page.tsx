@@ -14,11 +14,12 @@ export default function ChatPage() {
     useChat({ api: "/api/chat" });
 
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      append({ role: 'user', content: e.detail });
+    const handler = (e: Event) => {
+      const message = (e as CustomEvent).detail;
+      append({ role: 'user', content: message });
     };
-    window.addEventListener('card-action', handler as EventListener);
-    return () => window.removeEventListener('card-action', handler as EventListener);
+    window.addEventListener('chat-card-action', handler);
+    return () => window.removeEventListener('chat-card-action', handler);
   }, [append]);
 
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function ChatPage() {
                           invocation.state === "result" ? invocation.result : undefined
                         }
                         onAction={(message: string) => {
-                          window.dispatchEvent(new CustomEvent('card-action', { detail: message }));
+                          window.dispatchEvent(new CustomEvent('chat-card-action', { detail: message }));
                         }}
                       />
                     ))}
