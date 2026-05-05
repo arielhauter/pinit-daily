@@ -616,6 +616,87 @@ export const chatTools = {
     },
   }),
 
+  print_label: tool({
+    description:
+      "พิมพ์ฉลาก QR Code สำหรับสินค้า (Generate a QR code label for a product). Returns a URL that opens the label in a new tab.",
+    parameters: z.object({
+      sku: z.string().describe("รหัสสินค้า เช่น PD69000071"),
+      size: z.enum(["40x20", "40x30", "70x30", "70x50"]).describe("ขนาดฉลาก"),
+    }),
+    execute: async ({ sku, size }) => {
+      try {
+        const sanitized = sanitizeForFormula(sku);
+        const products = await selectRecords(TABLES.PRODUCTS, {
+          filterByFormula: `{sku} = "${sanitized}"`,
+          fields: ["sku", "display_name", "last_known_sell_price_baht", "repair_price_total", "show_repair_on_label"],
+          maxRecords: 1,
+        });
+
+        if (products.length === 0) {
+          return { success: false, error: `ไม่พบสินค้า SKU: ${sku}` };
+        }
+
+        const product = products[0].fields;
+        const name = encodeURIComponent((product.display_name as string) || "");
+        const price = (product.last_known_sell_price_baht as number) || 0;
+        const repair = product.show_repair_on_label ? ((product.repair_price_total as number) || 0) : 0;
+        const baseUrl = process.env.NEXT_PUBLIC_LABEL_API_URL || "https://pinit-label-api.onrender.com";
+        const labelUrl = `${baseUrl}/label/${sku}/${size}?name=${name}&price=${price}&repair=${repair}`;
+
+        return {
+          success: true,
+          sku,
+          size,
+          productName: (product.display_name as string) || "",
+          labelUrl,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "สร้างฉลากไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
+  update_stock_count: tool({
+    description:
+      "อัปเดตจำนวนสต็อกจากการนับจริง (Update product stock from physical count). Sets current_stock, has_been_counted, counted_date, and counted_by. IMPORTANT: Always confirm with user before calling.",
+    parameters: z.object({
+      product_record_id: z.string().describe("Airtable record ID ของสินค้า"),
+      new_count: z.number().describe("จำนวนที่นับได้"),
+      counted_by: z.string().optional().describe("ผู้นับ (default: Mai)"),
+    }),
+    execute: async ({ product_record_id, new_count, counted_by }) => {
+      try {
+        const product = await getRecord(TABLES.PRODUCTS, product_record_id);
+        const currentStock = (product.fields.current_stock as number) || 0;
+        const difference = new_count - currentStock;
+
+        await updateRecord(TABLES.PRODUCTS, product_record_id, {
+          current_stock: new_count,
+          has_been_counted: true,
+          counted_date: new Date().toISOString().split("T")[0],
+          counted_by: counted_by || "Mai",
+        });
+
+        return {
+          success: true,
+          productName: (product.fields.display_name as string) || "",
+          sku: (product.fields.sku as string) || "",
+          previousStock: currentStock,
+          newStock: new_count,
+          difference,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "อัปเดตสต็อกไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
   update_repair_status: tool({
     description:
       "อัปเดตสถานะงานซ่อม (Update repair job status). Valid transitions: รับงาน→กำลังซ่อม→เสร็จแล้ว→จ่ายแล้ว. IMPORTANT: Always confirm with user before calling.",

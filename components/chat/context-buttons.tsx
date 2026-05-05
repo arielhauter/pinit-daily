@@ -12,7 +12,7 @@ const BUTTONS = [
   { emoji: "📘", label: "ซื้อ", prompt: "ต้องการบันทึกการซื้อ", color: "border-blue-500" },
   { emoji: "📙", label: "ซ่อม", prompt: "ต้องการดูงานซ่อม", color: "border-orange-500" },
   { emoji: "💸", label: "จ่าย", prompt: "ต้องการบันทึกค่าใช้จ่าย", color: "border-red-500" },
-  { emoji: "📦", label: "สต็อก", prompt: "ต้องการค้นหาสินค้า", color: "border-purple-500" },
+  { emoji: "📦", label: "สต็อก", prompt: "ต้องการนับสต็อก", color: "border-purple-500" },
   { emoji: "🌙", label: "ปิดร้าน", prompt: "__CLOSE_SHOP__", color: "border-slate-500" },
 ];
 

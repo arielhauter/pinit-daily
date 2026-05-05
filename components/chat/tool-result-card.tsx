@@ -46,6 +46,13 @@ function ProductCards({ data }: { data: { found: number; products: Array<{
           {p.stock > 0 && (
             <div className="text-xs text-sky-400 mt-2">แตะเพื่อขาย</div>
           )}
+          <button
+            data-card-action={`พิมพ์ฉลาก ${p.sku} ขนาด 40x30`}
+            className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full cursor-pointer mt-1 inline-block"
+            onClick={(e) => e.stopPropagation()}
+          >
+            🏷 พิมพ์ฉลาก
+          </button>
         </div>
       ))}
     </div>
@@ -263,6 +270,76 @@ function PurchaseConfirmationCard({ data }: { data: {
   );
 }
 
+function LabelCard({ data }: { data: {
+  success: boolean; error?: string;
+  sku?: string; size?: string; productName?: string; labelUrl?: string;
+}}) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ พิมพ์ฉลากไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">🏷 {data.productName}</div>
+      <div className="text-xs text-slate-400 mt-1">SKU: {data.sku} | ขนาด: {data.size}</div>
+      <button
+        data-label-url={data.labelUrl}
+        className="mt-2 text-sm bg-sky-800 text-sky-200 px-3 py-1 rounded-full cursor-pointer active:bg-sky-700"
+      >
+        🖨 เปิดฉลาก
+      </button>
+    </div>
+  );
+}
+
+function StockCountCard({ data }: { data: {
+  success: boolean; error?: string;
+  productName?: string; sku?: string;
+  previousStock?: number; newStock?: number; difference?: number;
+}}) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ อัปเดตสต็อกไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+
+  const diff = data.difference || 0;
+  const diffText = diff < 0 ? `ขาด ${Math.abs(diff)}` : diff > 0 ? `เกิน ${diff}` : 'ตรง ✓';
+  const diffColor = diff < 0 ? 'text-orange-300' : 'text-green-300';
+
+  return (
+    <div className="bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ อัปเดตสต็อกเรียบร้อย!</div>
+      <div className="text-sm text-slate-100 mt-1">{data.productName}</div>
+      <div className="text-sm text-slate-300 mt-1">
+        เดิม: {data.previousStock} → ใหม่: {data.newStock}
+        <span className={`ml-2 ${diffColor}`}>({diffText})</span>
+      </div>
+      <div className="flex gap-2 mt-2">
+        <button
+          data-card-action={`พิมพ์ฉลาก ${data.sku} ขนาด 40x30`}
+          className="text-xs bg-sky-800 text-sky-200 px-3 py-1 rounded-full cursor-pointer"
+        >
+          🏷 พิมพ์ฉลาก
+        </button>
+        <button
+          data-scan-trigger="true"
+          className="text-xs bg-slate-700 text-slate-200 px-3 py-1 rounded-full cursor-pointer"
+        >
+          📷 สแกนต่อ
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function RepairStatusConfirmationCard({ data }: { data: {
   success: boolean; error?: string; currentStatus?: string; validTransitions?: string[];
   jobNumber?: number; previousStatus?: string; newStatus?: string;
@@ -325,6 +402,10 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <PurchaseConfirmationCard data={data as Parameters<typeof PurchaseConfirmationCard>[0]["data"]} />;
     case "update_repair_status":
       return <RepairStatusConfirmationCard data={data as Parameters<typeof RepairStatusConfirmationCard>[0]["data"]} />;
+    case "print_label":
+      return <LabelCard data={data as Parameters<typeof LabelCard>[0]["data"]} />;
+    case "update_stock_count":
+      return <StockCountCard data={data as Parameters<typeof StockCountCard>[0]["data"]} />;
     default:
       return (
         <pre className="text-xs text-slate-400 overflow-auto">

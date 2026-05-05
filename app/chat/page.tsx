@@ -1,14 +1,16 @@
 "use client";
 
 import { useChat } from "ai/react";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ContextButtons } from "@/components/chat/context-buttons";
 import { ToolResultCard } from "@/components/chat/tool-result-card";
+import { QrScanner } from "@/components/chat/qr-scanner";
 
 export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } =
     useChat({ api: "/api/chat" });
@@ -16,6 +18,25 @@ export default function ChatPage() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+
+      // QR scanner trigger from stock count card
+      const scanTrigger = target.closest('[data-scan-trigger]');
+      if (scanTrigger) {
+        setShowScanner(true);
+        return;
+      }
+
+      // Label printing — open URL in new tab
+      const label = target.closest('[data-label-url]');
+      if (label) {
+        const url = label.getAttribute('data-label-url');
+        if (url) {
+          window.open(url, '_blank');
+        }
+        return;
+      }
+
+      // Card actions
       const card = target.closest('[data-card-action]');
       if (card) {
         const message = card.getAttribute('data-card-action');
@@ -27,6 +48,11 @@ export default function ChatPage() {
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, [append]);
+
+  const handleQrScan = (value: string) => {
+    setShowScanner(false);
+    append({ role: 'user', content: `สแกนได้: ${value}` });
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -115,11 +141,27 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* QR Scanner Overlay */}
+      {showScanner && (
+        <QrScanner
+          onScan={handleQrScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       {/* Input */}
       <form
         onSubmit={handleSubmit}
         className="flex gap-2 p-3 border-t border-slate-700 bg-slate-900"
       >
+        <button
+          type="button"
+          onClick={() => setShowScanner(true)}
+          disabled={isLoading}
+          className="text-slate-400 hover:text-white w-10 h-10 flex items-center justify-center disabled:opacity-50 active:scale-95 transition-transform"
+        >
+          📷
+        </button>
         <input
           value={input}
           onChange={handleInputChange}
