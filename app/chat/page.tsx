@@ -81,7 +81,7 @@ export default function ChatPage() {
                           invocation.state === "result" ? invocation.result : undefined
                         }
                         onAction={(message: string) => {
-                          append({ role: 'user', content: message });
+                          handleContextButton(message);
                         }}
                       />
                     ))}
