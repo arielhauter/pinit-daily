@@ -72,17 +72,24 @@ export default function ChatPage() {
                 )}
                 {hasTools && (
                   <div className="mt-2 space-y-1">
-                    {m.toolInvocations!.map((invocation) => (
-                      <ToolResultCard
-                        key={invocation.toolCallId}
-                        toolName={invocation.toolName}
-                        state={invocation.state}
-                        result={
-                          invocation.state === "result" ? invocation.result : undefined
-                        }
-                        onAction={(message) => append({ role: "user", content: message })}
-                      />
-                    ))}
+                    {m.toolInvocations!.map((invocation) => {
+                      const onAction = (message: string) => {
+                        console.log("onAction called in page.tsx with:", message);
+                        append({ role: "user", content: message });
+                      };
+                      console.log("Rendering ToolResultCard — onAction prop exists:", typeof onAction);
+                      return (
+                        <ToolResultCard
+                          key={invocation.toolCallId}
+                          toolName={invocation.toolName}
+                          state={invocation.state}
+                          result={
+                            invocation.state === "result" ? invocation.result : undefined
+                          }
+                          onAction={onAction}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>

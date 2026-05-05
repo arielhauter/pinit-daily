@@ -16,6 +16,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
   cost: number; sellPrice: number; repairPrice: number | null;
   category: string; photoUrl: string | null;
 }> }; onAction?: (message: string) => void }) {
+  console.log("ProductCards render — onAction:", typeof onAction);
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบสินค้า</p>;
   }
@@ -29,8 +30,12 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            if (p.stock > 0 && onAction) {
+            console.log("onPointerDown — onAction type:", typeof onAction, "stock:", p.stock);
+            if (onAction) {
+              console.log("Calling onAction with:", `ขายสินค้า ${p.name} (${p.sku})`);
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
+            } else {
+              console.log("ERROR: onAction is undefined");
             }
           }}
           className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
