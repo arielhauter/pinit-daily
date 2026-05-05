@@ -13,7 +13,8 @@ const CHECKLIST_ITEMS = [
 
 export default function UploadPage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [checks, setChecks] = useState<boolean[]>(
     new Array(CHECKLIST_ITEMS.length).fill(false)
   );
@@ -107,7 +108,15 @@ export default function UploadPage() {
 
       <div className="bg-surface rounded-xl p-6 border border-slate-700 text-center">
         <input
-          ref={fileInputRef}
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        <input
+          ref={galleryInputRef}
           type="file"
           accept="image/*"
           onChange={handleFileSelect}
@@ -121,31 +130,44 @@ export default function UploadPage() {
               alt="Ledger preview"
               className="w-full rounded-lg max-h-64 object-contain"
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="text-sm text-slate-400 underline"
-            >
-              ถ่ายใหม่ (Retake)
-            </button>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
+              >
+                📷 ถ่ายใหม่ (Retake)
+              </button>
+              <button
+                onClick={() => galleryInputRef.current?.click()}
+                className="bg-surface-light text-slate-300 hover:text-white px-3 py-2 rounded-lg text-xs transition-colors"
+              >
+                🖼️ เลือกรูป (Choose Photo)
+              </button>
+            </div>
           </div>
         ) : (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full py-8 space-y-2"
-          >
-            <div className="text-4xl">📷</div>
+          <div className="py-6 space-y-3">
             <div className="text-lg font-semibold text-white">
               ถ่ายรูปเก๊ะ
             </div>
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-400 mb-2">
               Take Photo of Ledger
             </div>
-            <div className="text-xs text-slate-500 mt-2">
-              กดเพื่อถ่ายรูป / เลือกไฟล์
-              <br />
-              Tap to take photo / choose file
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="bg-surface-light text-slate-300 hover:text-white px-4 py-3 rounded-lg text-sm transition-colors"
+              >
+                📷 ถ่ายรูป (Take Photo)
+              </button>
+              <button
+                onClick={() => galleryInputRef.current?.click()}
+                className="bg-surface-light text-slate-300 hover:text-white px-4 py-3 rounded-lg text-sm transition-colors"
+              >
+                🖼️ เลือกรูป (Choose Photo)
+              </button>
             </div>
-          </button>
+          </div>
         )}
       </div>
 
