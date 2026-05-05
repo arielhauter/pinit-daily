@@ -7,6 +7,116 @@ function sanitizeForFormula(input: string): string {
   return input.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
+function cleanSelect(value: string): string {
+  return value.trim().replace(/^["']+|["']+$/g, "");
+}
+
+const SALE_PAYMENT_MAP: Record<string, string> = {
+  "เงินสด": "เงินสด (Cash)",
+  "cash": "เงินสด (Cash)",
+  "เงินสด (cash)": "เงินสด (Cash)",
+  "โอน": "โอน (Transfer)",
+  "transfer": "โอน (Transfer)",
+  "โอน (transfer)": "โอน (Transfer)",
+  "เครดิต": "เครดิต (Credit)",
+  "credit": "เครดิต (Credit)",
+  "เครดิต (credit)": "เครดิต (Credit)",
+  "หลายช่องทาง": "หลายช่องทาง (Mixed) ",
+  "mixed": "หลายช่องทาง (Mixed) ",
+};
+
+const EXPENSE_PAYMENT_MAP: Record<string, string> = {
+  "เงินสด": "เงินสด (Cash)",
+  "cash": "เงินสด (Cash)",
+  "เงินสด (cash)": "เงินสด (Cash)",
+  "โอน": "โอน (Transfer)",
+  "transfer": "โอน (Transfer)",
+  "โอน (transfer)": "โอน (Transfer)",
+  "เครดิต": "เครดิต (Credit)",
+  "credit": "เครดิต (Credit)",
+};
+
+const PURCHASE_PAYMENT_MAP: Record<string, string> = {
+  "เงินสด": "เงินสด (Cash)",
+  "cash": "เงินสด (Cash)",
+  "เงินสด (cash)": "เงินสด (Cash)",
+  "โอน": "โอน (Transfer)",
+  "transfer": "โอน (Transfer)",
+  "โอน (transfer)": "โอน (Transfer)",
+  "บัตรเครดิต": "บัตรเครดิต (Credit Card)",
+  "credit card": "บัตรเครดิต (Credit Card)",
+  "บัตรเครดิต (credit card)": "บัตรเครดิต (Credit Card)",
+  "shopee": "Shopee (pre-paid)",
+  "shopee (pre-paid)": "Shopee (pre-paid)",
+};
+
+const REPAIR_PAYMENT_MAP: Record<string, string> = {
+  "เงินสด": "เงินสด (Cash)",
+  "cash": "เงินสด (Cash)",
+  "เงินสด (cash)": "เงินสด (Cash)",
+  "โอน": "โอน (Transfer)",
+  "transfer": "โอน (Transfer)",
+  "โอน (transfer)": "โอน (Transfer)",
+  "เครดิต": "เครดิต (Credit)",
+  "credit": "เครดิต (Credit)",
+  "เครดิต (credit)": "เครดิต (Credit)",
+};
+
+const EXPENSE_CATEGORY_MAP: Record<string, string> = {
+  "ค่าไฟ": "ค่าไฟ (Electricity)",
+  "electricity": "ค่าไฟ (Electricity)",
+  "ค่าน้ำ": "ค่าน้ำ (Water)",
+  "water": "ค่าน้ำ (Water)",
+  "ค่าน้ำมันรถ": "ค่าน้ำมันรถ (Fuel)",
+  "fuel": "ค่าน้ำมันรถ (Fuel)",
+  "ค่าอินเทอร์เน็ต": "ค่าอินเทอร์เน็ต (Internet)",
+  "internet": "ค่าอินเทอร์เน็ต (Internet)",
+  "ค่าซอฟต์แวร์": "ค่าซอฟต์แวร์ (Software i.e. Airtable, Fillout)",
+  "software": "ค่าซอฟต์แวร์ (Software i.e. Airtable, Fillout)",
+  "ค่า ai": "ค่า AI / Claude",
+  "ค่า claude": "ค่า AI / Claude",
+  "ai": "ค่า AI / Claude",
+  "claude": "ค่า AI / Claude",
+  "ค่าโทรศัพท์": "ค่าโทรศัพท์ (Cell phone plans Mai, Boot, Pinit)",
+  "phone": "ค่าโทรศัพท์ (Cell phone plans Mai, Boot, Pinit)",
+  "ค่าจ้างช่าง": "ค่าจ้างช่าง (Part-time labor)",
+  "labor": "ค่าจ้างช่าง (Part-time labor)",
+  "ค่าขนส่ง": "ค่าขนส่ง (Shipping / inbound freight)",
+  "shipping": "ค่าขนส่ง (Shipping / inbound freight)",
+  "ค่าเครื่องมือ": "ค่าเครื่องมือ (Tools & maintenance)",
+  "tools": "ค่าเครื่องมือ (Tools & maintenance)",
+  "เงินเดือน mai": "เงินเดือน Mai",
+  "เงินเดือน boot": "เงินเดือน Boot",
+  "เงินเดือน pinit": "เงินเดือน/เบิก Pinit",
+  "ค่าอาหาร": "ค่าอาหาร/เครื่องดื่ม (Food & drinking water - shop)",
+  "food": "ค่าอาหาร/เครื่องดื่ม (Food & drinking water - shop)",
+  "ดอกเบี้ย": "ดอกเบี้ยเบิกเกินบัญชี (SCB overdraft interest)",
+  "ค่ายื่นภาษี": "ค่ายื่นภาษี (Tax filing)",
+  "tax": "ค่ายื่นภาษี (Tax filing)",
+  "netflix": "Netflix",
+  "ค่าฟาร์ม": "ค่าฟาร์ม (Farm subsidy - labor, transport, supplies)",
+  "farm": "ค่าฟาร์ม (Farm subsidy - labor, transport, supplies)",
+  "อื่นๆ": "อื่นๆ (Other)",
+  "other": "อื่นๆ (Other)",
+};
+
+const REPAIR_STATUS_MAP: Record<string, string> = {
+  "รับงาน": "รับงาน (Quoting)",
+  "quoting": "รับงาน (Quoting)",
+  "กำลังซ่อม": "กำลังซ่อม (In Progress)",
+  "in progress": "กำลังซ่อม (In Progress)",
+  "เสร็จแล้ว": "เสร็จแล้ว (Complete)",
+  "complete": "เสร็จแล้ว (Complete)",
+  "จ่ายแล้ว": "จ่ายแล้ว (Paid)",
+  "paid": "จ่ายแล้ว (Paid)",
+};
+
+function normalizeSelect(value: string, map: Record<string, string>): string {
+  const cleaned = cleanSelect(value);
+  const lower = cleaned.toLowerCase();
+  return map[lower] || map[cleaned] || cleaned;
+}
+
 function extractPhotoUrl(photoField: unknown): string | null {
   if (
     Array.isArray(photoField) &&
@@ -278,10 +388,13 @@ export const chatTools = {
     }),
     execute: async ({ transaction_type, items, payment_method, customer_record_id, discount, total_collected, note }) => {
       try {
+        const normalizedPayment = normalizeSelect(payment_method, SALE_PAYMENT_MAP);
+        const normalizedType = cleanSelect(transaction_type);
+
         const saleFields: Record<string, unknown> = {
           sale_date: new Date().toISOString(),
-          transaction_type,
-          payment_method,
+          transaction_type: normalizedType,
+          payment_method: normalizedPayment,
           created_by: "Mai",
         };
 
@@ -334,7 +447,7 @@ export const chatTools = {
           })),
           total: computedTotal,
           discount: discount || 0,
-          paymentMethod: payment_method,
+          paymentMethod: normalizedPayment,
           customer: customer_record_id ? "linked" : null,
         };
       } catch (err) {
@@ -359,11 +472,14 @@ export const chatTools = {
     }),
     execute: async ({ expense_date, category, amount, payment_method, description, note }) => {
       try {
+        const normalizedCategory = normalizeSelect(category, EXPENSE_CATEGORY_MAP);
+        const normalizedPayment = normalizeSelect(payment_method, EXPENSE_PAYMENT_MAP);
+
         const fields: Record<string, unknown> = {
           expense_date: expense_date || new Date().toISOString().split("T")[0],
-          category,
+          category: normalizedCategory,
           amount,
-          payment_method,
+          payment_method: normalizedPayment,
           description,
         };
         if (note) {
@@ -375,9 +491,9 @@ export const chatTools = {
         return {
           success: true,
           expenseId: record.id,
-          category,
+          category: normalizedCategory,
           amount,
-          paymentMethod: payment_method,
+          paymentMethod: normalizedPayment,
           description,
           date: fields.expense_date,
         };
@@ -413,6 +529,7 @@ export const chatTools = {
     }),
     execute: async ({ supplier_name, supplier_record_id, payment_method, items, shipping_cost, total_paid, note }) => {
       try {
+        const normalizedPayment = normalizeSelect(payment_method, PURCHASE_PAYMENT_MAP);
         let supplierId = supplier_record_id;
 
         if (!supplierId) {
@@ -436,7 +553,7 @@ export const chatTools = {
         const purchaseFields: Record<string, unknown> = {
           purchase_date: new Date().toISOString(),
           supplier: [supplierId],
-          payment_method,
+          payment_method: normalizedPayment,
           total_paid,
         };
         if (shipping_cost && shipping_cost > 0) {
@@ -491,6 +608,11 @@ export const chatTools = {
     }),
     execute: async ({ job_record_id, new_status, payment_method, total_collected, notes }) => {
       try {
+        const normalizedStatus = normalizeSelect(new_status, REPAIR_STATUS_MAP);
+        const normalizedPayment = payment_method
+          ? normalizeSelect(payment_method, REPAIR_PAYMENT_MAP)
+          : undefined;
+
         const VALID_TRANSITIONS: Record<string, string[]> = {
           "รับงาน (Quoting)": ["กำลังซ่อม (In Progress)"],
           "กำลังซ่อม (In Progress)": ["เสร็จแล้ว (Complete)"],
@@ -501,17 +623,17 @@ export const chatTools = {
         const currentStatus = currentRecord.fields.status as string;
 
         const validNext = VALID_TRANSITIONS[currentStatus];
-        if (!validNext || !validNext.includes(new_status)) {
+        if (!validNext || !validNext.includes(normalizedStatus)) {
           return {
             success: false,
-            error: `ไม่สามารถเปลี่ยนจาก "${currentStatus}" เป็น "${new_status}" ได้`,
+            error: `ไม่สามารถเปลี่ยนจาก "${currentStatus}" เป็น "${normalizedStatus}" ได้`,
             currentStatus,
             validTransitions: validNext || [],
           };
         }
 
-        if (new_status === "จ่ายแล้ว (Paid)") {
-          if (!payment_method || total_collected === undefined) {
+        if (normalizedStatus === "จ่ายแล้ว (Paid)") {
+          if (!normalizedPayment || total_collected === undefined) {
             return {
               success: false,
               error: "ต้องระบุวิธีชำระและยอดเก็บเมื่อเปลี่ยนเป็นจ่ายแล้ว",
@@ -520,15 +642,15 @@ export const chatTools = {
         }
 
         const updateFields: Record<string, unknown> = {
-          status: new_status,
+          status: normalizedStatus,
         };
 
-        if (new_status === "เสร็จแล้ว (Complete)") {
+        if (normalizedStatus === "เสร็จแล้ว (Complete)") {
           updateFields.completion_date_boot = new Date().toISOString().split("T")[0];
         }
 
-        if (new_status === "จ่ายแล้ว (Paid)") {
-          updateFields.payment_method = payment_method;
+        if (normalizedStatus === "จ่ายแล้ว (Paid)") {
+          updateFields.payment_method = normalizedPayment;
           updateFields.total_collected = total_collected;
         }
 
@@ -543,8 +665,8 @@ export const chatTools = {
           jobId: job_record_id,
           jobNumber: currentRecord.fields.job_id as number,
           previousStatus: currentStatus,
-          newStatus: new_status,
-          paymentMethod: payment_method || null,
+          newStatus: normalizedStatus,
+          paymentMethod: normalizedPayment || null,
           totalCollected: total_collected || null,
         };
       } catch (err) {

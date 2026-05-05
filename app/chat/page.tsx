@@ -66,17 +66,21 @@ export default function ChatPage() {
               {m.content && (
                 <p className="whitespace-pre-wrap text-sm">{m.content}</p>
               )}
-              {m.toolInvocations?.map((invocation) => (
-                <ToolResultCard
-                  key={invocation.toolCallId}
-                  toolName={invocation.toolName}
-                  state={invocation.state}
-                  result={
-                    invocation.state === "result" ? invocation.result : undefined
-                  }
-                  onAction={(message) => append({ role: "user", content: message })}
-                />
-              ))}
+              {m.toolInvocations && m.toolInvocations.length > 0 && (
+                <div className="-mx-2 mt-2">
+                  {m.toolInvocations.map((invocation) => (
+                    <ToolResultCard
+                      key={invocation.toolCallId}
+                      toolName={invocation.toolName}
+                      state={invocation.state}
+                      result={
+                        invocation.state === "result" ? invocation.result : undefined
+                      }
+                      onAction={(message) => append({ role: "user", content: message })}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
