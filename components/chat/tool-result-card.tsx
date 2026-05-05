@@ -29,17 +29,11 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            console.log("CARD TAPPED via pointerdown", p.name, "onAction:", !!onAction);
-            alert("Card tapped! " + p.name);
             if (p.stock > 0 && onAction) {
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
           }}
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log("CARD CLICKED via onclick", p.name, "onAction:", !!onAction, "stock:", p.stock);
-          }}
-          className={`border-2 border-red-500 bg-slate-800 border-l-4 border-l-sky-400 rounded-r-lg p-3 relative z-50 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
           <div className="font-medium text-slate-100">📦 {p.name}</div>
           <div className="text-xs text-slate-400 mt-1">SKU: {p.sku}</div>
@@ -118,8 +112,13 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
       {data.jobs.slice(0, 5).map((job) => (
         <div
           key={job.id}
-          onClick={() => onAction?.(`อัปเดตสถานะงานซ่อม #${job.jobId}`)}
-          className={`bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          role="button"
+          tabIndex={0}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onAction?.(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
+          }}
+          className={`bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-100">🔧 #{job.jobId}</span>
@@ -160,8 +159,13 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
       {data.customers.map((c) => (
         <div
           key={c.id}
-          onClick={() => onAction?.(`ดูประวัติลูกค้า ${c.name}`)}
-          className={`bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          role="button"
+          tabIndex={0}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onAction?.(`ดูประวัติลูกค้า ${c.name}`);
+          }}
+          className={`bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
           <div className="font-medium text-slate-100">👤 {c.name}</div>
           {c.phone && (
@@ -210,8 +214,8 @@ function SaleConfirmationCard({ data, onAction }: { data: {
       </div>
       {onAction && (
         <button
-          onClick={(e) => { e.stopPropagation(); onAction("ต้องการบันทึกการขาย"); }}
-          className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full"
+          onPointerDown={(e) => { e.stopPropagation(); onAction("ต้องการบันทึกการขาย"); }}
+          className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full relative z-10 cursor-pointer"
         >
           📗 ขายต่อ
         </button>
