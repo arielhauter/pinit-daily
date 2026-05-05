@@ -1,6 +1,4159 @@
 {
-    "error": {
-        "type": "UNAUTHORIZED",
-        "message": "Invalid authentication token"
-    }
+    "tables": [
+        {
+            "id": "tbl6LpfplyCy1ADXl",
+            "name": "Sales",
+            "primaryFieldId": "fldBd5FvGrzs90Uca",
+            "fields": [
+                {
+                    "type": "autoNumber",
+                    "id": "fldBd5FvGrzs90Uca",
+                    "name": "sale_id"
+                },
+                {
+                    "type": "dateTime",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        },
+                        "timeFormat": {
+                            "name": "24hour",
+                            "format": "HH:mm"
+                        },
+                        "timeZone": "client"
+                    },
+                    "id": "fldfzwdhRHkpstw6u",
+                    "name": "sale_date"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selQoNKYV6w62kdJP",
+                                "name": "Product Sale",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selILFvPTTnVohMaR",
+                                "name": "Simple Repair",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selZAoLAIMp10FZZ5",
+                                "name": "Specialized Repair",
+                                "color": "tealLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldo3yJEiMV8hGVm5",
+                    "name": "transaction_type"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selQt9Rm8CzFdze17",
+                                "name": "\u0e40\u0e07\u0e34\u0e19\u0e2a\u0e14 (Cash)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selosGD2hW3IiyAzc",
+                                "name": "\u0e42\u0e2d\u0e19 (Transfer)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selWF3mYn4MWNbJlp",
+                                "name": "\u0e40\u0e04\u0e23\u0e14\u0e34\u0e15 (Credit)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selre7uLoykO2ScJq",
+                                "name": "\u0e2b\u0e25\u0e32\u0e22\u0e0a\u0e48\u0e2d\u0e07\u0e17\u0e32\u0e07 (Mixed) ",
+                                "color": "greenLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldbL3vwL4mVjdUV9",
+                    "name": "payment_method"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblHi4m6KaFxvLlMT",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fldOvH5kcbWrT8pML"
+                    },
+                    "id": "fldyKw0kfjY9vRrzg",
+                    "name": "customer",
+                    "description": "Optional. Required if payment_method = Credit."
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblzfTme1hneJOfKk",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldDn9LGE96Twp6se"
+                    },
+                    "id": "fld38zMeSnVyLUtwL",
+                    "name": "line_items"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fld38zMeSnVyLUtwL",
+                        "fieldIdInLinkedTable": "fldHRGdM1rGdIU1cS",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldn3zLwzuzjX9d0W",
+                    "name": "display_name (from product) (from line_items)"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fld38zMeSnVyLUtwL",
+                        "fieldIdInLinkedTable": "flddOUUq7Elu2vKfE",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldpFMT3OTS19HsE8",
+                    "name": "subtotal"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fld38zMeSnVyLUtwL",
+                        "fieldIdInLinkedTable": "fldt7rNFvIbFH1UEU",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldiIGd4wJOBJmHhh",
+                    "name": "subtotal_repair"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldMBAlKUt6hQOPto",
+                    "name": "discount_baht",
+                    "description": "Optional transaction-level discount"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(\n  {fldo3yJEiMV8hGVm5} = \"Simple Repair\",\n  IF({fldMBAlKUt6hQOPto}, {fldiIGd4wJOBJmHhh} - {fldMBAlKUt6hQOPto}, {fldiIGd4wJOBJmHhh}),\n  IF({fldMBAlKUt6hQOPto}, {fldpFMT3OTS19HsE8} - {fldMBAlKUt6hQOPto}, {fldpFMT3OTS19HsE8})\n)",
+                        "referencedFieldIds": [
+                            "fldo3yJEiMV8hGVm5",
+                            "fldMBAlKUt6hQOPto",
+                            "fldiIGd4wJOBJmHhh",
+                            "fldpFMT3OTS19HsE8"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fld2pQ66tBER24Hav",
+                    "name": "total"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldPaFLenprVB2Dt4",
+                    "name": "total_collected"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldPaFLenprVB2Dt4} - {fld2pQ66tBER24Hav}",
+                        "referencedFieldIds": [
+                            "fldPaFLenprVB2Dt4",
+                            "fld2pQ66tBER24Hav"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "$"
+                            }
+                        }
+                    },
+                    "id": "fldLNQGgvJIr6XJoD",
+                    "name": "discrepancy"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldR6pLwWpvubYwuU",
+                    "name": "vat_included",
+                    "description": "Default: TRUE (most products are non-VAT per POSPOS import)"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblu4Q5KQfh4lNPNp",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldibT9SI68xQT3om"
+                    },
+                    "id": "fldZuWBnmdpC3tXR8",
+                    "name": "repair_job",
+                    "description": "Only for specialized repairs \u2014 links to the job record"
+                },
+                {
+                    "type": "richText",
+                    "id": "fldnSBfCcX9pN1RsJ",
+                    "name": "note"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selbodQOSJTU15BtJ",
+                                "name": "Mai",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selZZ9vwMgEvk2zBo",
+                                "name": "Boot",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selbHQGVqoCYKfZ4q",
+                                "name": "Mint",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selynRolS1iaL2ru8",
+                                "name": "Pinit",
+                                "color": "greenLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldowPbeeeWZczlT0",
+                    "name": "created_by"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblt1gmhFWrL9VyEQ",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "flds5gynDecBOjhwl"
+                    },
+                    "id": "fldmydxJIW2tWEptu",
+                    "name": "Customer Credit"
+                },
+                {
+                    "type": "button",
+                    "id": "fldRGkc06q5YtVVrP",
+                    "name": "print_receipt"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwHWV8H50HsmjqtT",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwGKUvOodml84vni",
+                    "name": "Print Receipt",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblzfTme1hneJOfKk",
+            "name": "Sale Line Items",
+            "primaryFieldId": "fldKbwHR8L27J9IpL",
+            "fields": [
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldsOiCKUgSuJHqwt} & \" \u00d7 \" & {fldC5JoBfLRQ4CW04} & \" | \u0e3f\" & IF({fldufI59TPyd9yZwl}, {fldufI59TPyd9yZwl}, {fldBGuUonH5OzsgvD}) & IF(OR({fldxiVGubKTjB1iLC} > 0, {fldIUt5BPUz48b6LF} > 0), \" (\u0e0b\u0e48\u0e2d\u0e21: \u0e3f\" & IF({fldxiVGubKTjB1iLC}, {fldxiVGubKTjB1iLC}, {fldIUt5BPUz48b6LF}) & \")\", \"\")",
+                        "referencedFieldIds": [
+                            "fldsOiCKUgSuJHqwt",
+                            "fldC5JoBfLRQ4CW04",
+                            "fldufI59TPyd9yZwl",
+                            "fldBGuUonH5OzsgvD",
+                            "fldxiVGubKTjB1iLC",
+                            "fldIUt5BPUz48b6LF"
+                        ],
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldKbwHR8L27J9IpL",
+                    "name": "line_item_key_details"
+                },
+                {
+                    "type": "autoNumber",
+                    "id": "fldDdPH79RzJl2N4h",
+                    "name": "line_id"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tbl6LpfplyCy1ADXl",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fld38zMeSnVyLUtwL"
+                    },
+                    "id": "fldDn9LGE96Twp6se",
+                    "name": "sale_id"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblyxE4AkZ6vaQg0f",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fld0RFfkbXqSt27zP"
+                    },
+                    "id": "fldCkn4waY5jesncJ",
+                    "name": "product"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldCkn4waY5jesncJ",
+                        "fieldIdInLinkedTable": "flde0MXsty5ahHIUO",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldHRGdM1rGdIU1cS",
+                    "name": "display_name (from product)"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fldC5JoBfLRQ4CW04",
+                    "name": "quantity"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldCkn4waY5jesncJ",
+                        "fieldIdInLinkedTable": "fldukO6RVNrMmHtT5",
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldBGuUonH5OzsgvD",
+                    "name": "unit_price"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldufI59TPyd9yZwl",
+                    "name": "price_override"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldxiVGubKTjB1iLC",
+                    "name": "repair_price_override"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(\n  {fldufI59TPyd9yZwl},\n  {fldufI59TPyd9yZwl},\n  IF(\n    AND(\n      {fldZc0q1VmpKqXVk1} = \"Simple Repair\",\n      {fldIUt5BPUz48b6LF} > 0\n    ),\n    {fldIUt5BPUz48b6LF},\n    {fldBGuUonH5OzsgvD}\n  )\n)",
+                        "referencedFieldIds": [
+                            "fldufI59TPyd9yZwl",
+                            "fldZc0q1VmpKqXVk1",
+                            "fldIUt5BPUz48b6LF",
+                            "fldBGuUonH5OzsgvD"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldqlAnwQqJ7rnz9D",
+                    "name": "effective_price"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(\n  {fldxiVGubKTjB1iLC},\n  {fldxiVGubKTjB1iLC},\n  IF({fldIUt5BPUz48b6LF} > 0, {fldIUt5BPUz48b6LF}, 0)\n)",
+                        "referencedFieldIds": [
+                            "fldxiVGubKTjB1iLC",
+                            "fldIUt5BPUz48b6LF"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldEhp0ryYc5yGXRF",
+                    "name": "repair_effective_price"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldqlAnwQqJ7rnz9D} * {fldC5JoBfLRQ4CW04}",
+                        "referencedFieldIds": [
+                            "fldqlAnwQqJ7rnz9D",
+                            "fldC5JoBfLRQ4CW04"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "flddOUUq7Elu2vKfE",
+                    "name": "line_total"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldEhp0ryYc5yGXRF} > 0, {fldEhp0ryYc5yGXRF} * {fldC5JoBfLRQ4CW04}, {flddOUUq7Elu2vKfE})",
+                        "referencedFieldIds": [
+                            "fldEhp0ryYc5yGXRF",
+                            "fldC5JoBfLRQ4CW04",
+                            "flddOUUq7Elu2vKfE"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldt7rNFvIbFH1UEU",
+                    "name": "repair_line_total"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(FIND(\"\u0e04\u0e48\u0e32\u0e41\u0e23\u0e07\", {fldsOiCKUgSuJHqwt}), TRUE(), FALSE())",
+                        "referencedFieldIds": [
+                            "fldsOiCKUgSuJHqwt"
+                        ],
+                        "result": {
+                            "type": "checkbox",
+                            "options": {
+                                "icon": "check",
+                                "color": "greenBright"
+                            }
+                        }
+                    },
+                    "id": "fldxhZJBlnaYNkQzO",
+                    "name": "is_labor"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldCkn4waY5jesncJ",
+                        "fieldIdInLinkedTable": "flde0MXsty5ahHIUO",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldsOiCKUgSuJHqwt",
+                    "name": "product_name_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldCkn4waY5jesncJ",
+                        "fieldIdInLinkedTable": "fldLcTR31Rq6NJico",
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldz6Vecti1mZW6IJ",
+                    "name": "product_cost_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldCkn4waY5jesncJ",
+                        "fieldIdInLinkedTable": "fldAm0TyVu9D5xk5Y",
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldIUt5BPUz48b6LF",
+                    "name": "repair_price_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldDn9LGE96Twp6se",
+                        "fieldIdInLinkedTable": "fldo3yJEiMV8hGVm5",
+                        "result": {
+                            "type": "singleSelect",
+                            "options": {
+                                "choices": [
+                                    {
+                                        "id": "selQoNKYV6w62kdJP",
+                                        "name": "Product Sale",
+                                        "color": "blueLight2"
+                                    },
+                                    {
+                                        "id": "selILFvPTTnVohMaR",
+                                        "name": "Simple Repair",
+                                        "color": "cyanLight2"
+                                    },
+                                    {
+                                        "id": "selZAoLAIMp10FZZ5",
+                                        "name": "Specialized Repair",
+                                        "color": "tealLight2"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "id": "fldZc0q1VmpKqXVk1",
+                    "name": "transaction_type_lookup"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viw54aBrA3mtI9wh1",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwyPXoOJGeDHEbcz",
+                    "name": "Active Line Items",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblcgtMtqqtAPGP3O",
+            "name": "Purchases",
+            "primaryFieldId": "fld3jOLqFGViTElKF",
+            "fields": [
+                {
+                    "type": "autoNumber",
+                    "id": "fld3jOLqFGViTElKF",
+                    "name": "purchase_id"
+                },
+                {
+                    "type": "dateTime",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        },
+                        "timeFormat": {
+                            "name": "12hour",
+                            "format": "h:mma"
+                        },
+                        "timeZone": "client"
+                    },
+                    "id": "fldWpiOAFTxWT1uAO",
+                    "name": "purchase_date"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblaqQYuO8yS24O3R",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldkUYJKXCFyKHOSU"
+                    },
+                    "id": "fldncqm5sA8j5JTJW",
+                    "name": "supplier"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblc6kOrRkRAr1VCm",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldPCau2RegzNK5V1"
+                    },
+                    "id": "fldHqiX2710d8s4mP",
+                    "name": "line_items"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldHqiX2710d8s4mP",
+                        "fieldIdInLinkedTable": "fldLh2LFdIRwiKIkl",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldIq68pH6nk040b6",
+                    "name": "subtotal"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldiA5m8gdomiEuZr",
+                    "name": "shipping_cost"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldIq68pH6nk040b6} + IF({fldiA5m8gdomiEuZr}, {fldiA5m8gdomiEuZr}, 0)",
+                        "referencedFieldIds": [
+                            "fldIq68pH6nk040b6",
+                            "fldiA5m8gdomiEuZr"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldbZ2CDml2y5ZHUE",
+                    "name": "total"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldonnP524VXbTZV4",
+                    "name": "total_paid"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selQd0EVERFDQCZEe",
+                                "name": "\u0e40\u0e07\u0e34\u0e19\u0e2a\u0e14 (Cash)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selZNvDEme6UihVVF",
+                                "name": "\u0e42\u0e2d\u0e19 (Transfer)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selPvQ440IT7EJGgn",
+                                "name": "\u0e1a\u0e31\u0e15\u0e23\u0e40\u0e04\u0e23\u0e14\u0e34\u0e15 (Credit Card)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "sel7gRdJ9oAIxNlXS",
+                                "name": "Shopee (pre-paid)",
+                                "color": "greenLight2"
+                            }
+                        ]
+                    },
+                    "id": "flduS8N1PNv4su0Cd",
+                    "name": "payment_method"
+                },
+                {
+                    "type": "richText",
+                    "id": "fldJFT6JWNiqrVjUE",
+                    "name": "note"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viw7UTFKSfeRMzGNX",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwvBjtjwtjjPo3DD",
+                    "name": "Recent Purchases",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwbte5nsYhf5DXHf",
+                    "name": "By Supplier",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwPGhmrCKaWJzYej",
+                    "name": "Past 30 Days",
+                    "type": "grid"
+                },
+                {
+                    "id": "viww2KX0VmBnNwpor",
+                    "name": "This Calendar Month",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblc6kOrRkRAr1VCm",
+            "name": "Purchase Line Items",
+            "primaryFieldId": "fldGSyTayxYfsfKcc",
+            "fields": [
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(\n  {fld88IKFVTUIbYEfQ},\n  {fldcAba8ZBqp9NOXx} & \" \u00d7 \" & {fldTd7fCJGtHcb7IE} & \"\u0e41\u0e1e\u0e47\u0e04 (\" & {fld0j7SHr1tNS9ENf} & \" \u0e0a\u0e34\u0e49\u0e19) | \u0e3f\" & {fldG9ZMuaB91dqoEc} & \"/\u0e41\u0e1e\u0e47\u0e04 (\u0e3f\" & ROUND({fldt3eWa2K249vRm2}, 0) & \"/\u0e0a\u0e34\u0e49\u0e19)\",\n  {fldcAba8ZBqp9NOXx} & \" \u00d7 \" & {fldTd7fCJGtHcb7IE} & \" | \u0e3f\" & {fldG9ZMuaB91dqoEc}\n)",
+                        "referencedFieldIds": [
+                            "fld88IKFVTUIbYEfQ",
+                            "fldcAba8ZBqp9NOXx",
+                            "fldTd7fCJGtHcb7IE",
+                            "fld0j7SHr1tNS9ENf",
+                            "fldG9ZMuaB91dqoEc",
+                            "fldt3eWa2K249vRm2"
+                        ],
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldGSyTayxYfsfKcc",
+                    "name": "line_item_key_details"
+                },
+                {
+                    "type": "autoNumber",
+                    "id": "fldTxJRQsmIEA06LE",
+                    "name": "line_id"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblcgtMtqqtAPGP3O",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldHqiX2710d8s4mP"
+                    },
+                    "id": "fldPCau2RegzNK5V1",
+                    "name": "purchase_id"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblyxE4AkZ6vaQg0f",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fldtshdqdAFavpZxE"
+                    },
+                    "id": "fldUobp0cdW807H7q",
+                    "name": "product"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fldTd7fCJGtHcb7IE",
+                    "name": "quantity"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldG9ZMuaB91dqoEc",
+                    "name": "unit_cost"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldG9ZMuaB91dqoEc} * {fldTd7fCJGtHcb7IE}",
+                        "referencedFieldIds": [
+                            "fldG9ZMuaB91dqoEc",
+                            "fldTd7fCJGtHcb7IE"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldLh2LFdIRwiKIkl",
+                    "name": "line_total"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldUobp0cdW807H7q",
+                        "fieldIdInLinkedTable": "flde0MXsty5ahHIUO",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldcAba8ZBqp9NOXx",
+                    "name": "product_name_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldUobp0cdW807H7q",
+                        "fieldIdInLinkedTable": "fldLcTR31Rq6NJico",
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldHmpQ3z0stZvirw",
+                    "name": "product_cost_lookup"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fld88IKFVTUIbYEfQ",
+                    "name": "units_per_package"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fld88IKFVTUIbYEfQ}, {fldG9ZMuaB91dqoEc} / {fld88IKFVTUIbYEfQ}, {fldG9ZMuaB91dqoEc})",
+                        "referencedFieldIds": [
+                            "fld88IKFVTUIbYEfQ",
+                            "fldG9ZMuaB91dqoEc"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldt3eWa2K249vRm2",
+                    "name": "true_unit_cost"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fld88IKFVTUIbYEfQ}, {fldTd7fCJGtHcb7IE} * {fld88IKFVTUIbYEfQ}, {fldTd7fCJGtHcb7IE})",
+                        "referencedFieldIds": [
+                            "fld88IKFVTUIbYEfQ",
+                            "fldTd7fCJGtHcb7IE"
+                        ],
+                        "result": {
+                            "type": "number",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fld0j7SHr1tNS9ENf",
+                    "name": "total_units_received"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldrzN97DZ786E5jR",
+                    "name": "is_received"
+                },
+                {
+                    "type": "dateTime",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        },
+                        "timeFormat": {
+                            "name": "24hour",
+                            "format": "HH:mm"
+                        },
+                        "timeZone": "client"
+                    },
+                    "id": "fldU5Wa9mKzheYo4Z",
+                    "name": "received_at"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldUobp0cdW807H7q",
+                        "fieldIdInLinkedTable": "fldf7hNIa13fo1nG8",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldohghG2kyn3VFsw",
+                    "name": "print_40x20_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldUobp0cdW807H7q",
+                        "fieldIdInLinkedTable": "fld9UWxD6kgnD47AQ",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldAvbrsKIsjJILE9",
+                    "name": "print_40x30_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldUobp0cdW807H7q",
+                        "fieldIdInLinkedTable": "fldFPRJSl0sIr7t67",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldtJv3lEgXZrEV3H",
+                    "name": "print_70x30_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldUobp0cdW807H7q",
+                        "fieldIdInLinkedTable": "fldv1cN3hljz2sWVg",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fld8j4JCQyBvlEVaE",
+                    "name": "print_70x50_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldUobp0cdW807H7q",
+                        "fieldIdInLinkedTable": "fldE8U8pWc763hfmr",
+                        "result": {
+                            "type": "number",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fld6dhvPZkVWjfVr4",
+                    "name": "current_stock_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldPCau2RegzNK5V1",
+                        "fieldIdInLinkedTable": "fldWpiOAFTxWT1uAO",
+                        "result": {
+                            "type": "dateTime",
+                            "options": {
+                                "dateFormat": {
+                                    "name": "european",
+                                    "format": "D/M/YYYY"
+                                },
+                                "timeFormat": {
+                                    "name": "12hour",
+                                    "format": "h:mma"
+                                },
+                                "timeZone": "client"
+                            }
+                        }
+                    },
+                    "id": "fldpQf9QG5048TYD7",
+                    "name": "purchase_date_lookup"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldcAba8ZBqp9NOXx} & \" | \" & {fldTd7fCJGtHcb7IE} & \" \u0e0a\u0e34\u0e49\u0e19 | \u0e3f\" & {fldG9ZMuaB91dqoEc}",
+                        "referencedFieldIds": [
+                            "fldcAba8ZBqp9NOXx",
+                            "fldTd7fCJGtHcb7IE",
+                            "fldG9ZMuaB91dqoEc"
+                        ],
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldt1IpmbM4yuP7jd",
+                    "name": "receiving_display"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viw7R1M7aenRdVJOA",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwtmkItMyx7v3GaG",
+                    "name": "\u26a0\ufe0f Orphaned",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwbjbMWIox5DOrCw",
+                    "name": "Final Purchases (no orphans)",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwmHxksZSTydrkkO",
+                    "name": "\ud83d\udce6 Receiving Status",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwvA6u4oVgee8ZfM",
+                    "name": "Received Today",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblu4Q5KQfh4lNPNp",
+            "name": "Repair Jobs",
+            "primaryFieldId": "fldFKeIanSXtOkZuV",
+            "fields": [
+                {
+                    "type": "autoNumber",
+                    "id": "fldFKeIanSXtOkZuV",
+                    "name": "job_id"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblHi4m6KaFxvLlMT",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fld3WakB5OoiEfxSH"
+                    },
+                    "id": "fldcYfKqN4ssSD6mr",
+                    "name": "customer"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldcYfKqN4ssSD6mr",
+                        "fieldIdInLinkedTable": "fld0GszUMw7CwDDdu",
+                        "result": {
+                            "type": "phoneNumber"
+                        }
+                    },
+                    "id": "fldRvCpNScJ1MRA7L",
+                    "name": "customer_phone"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblY4vLuOly85jKBa",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fldDcFeiGBZbTwgxi"
+                    },
+                    "id": "fld4Rwr3Wc0QueP3C",
+                    "name": "vehicle"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "flde2Pl6kGhwMDpm6",
+                    "name": "vehicle_description"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldJcvH6K7x33hfmF",
+                    "name": "license_plate"
+                },
+                {
+                    "type": "multipleSelects",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selzEcU6r53pRGjgv",
+                                "name": "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e22\u0e32\u0e07\u0e43\u0e19",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selTwnuU9Ak5ZtuNh",
+                                "name": "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e22\u0e32\u0e07\u0e19\u0e2d\u0e01",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selcupqho2Yxx15US",
+                                "name": "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e19\u0e49\u0e33\u0e21\u0e31\u0e19\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selLRefUcS7t6bukU",
+                                "name": "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e1c\u0e49\u0e32\u0e40\u0e1a\u0e23\u0e01",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "seljHOfekwKoaU1Up",
+                                "name": "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e42\u0e0b\u0e48/\u0e2a\u0e40\u0e15\u0e2d\u0e23\u0e4c",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "selAODPxTnsY5kQrg",
+                                "name": "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e41\u0e1a\u0e15\u0e40\u0e15\u0e2d\u0e23\u0e35\u0e48",
+                                "color": "orangeLight2"
+                            },
+                            {
+                                "id": "sel8KzZMjtewQIMn5",
+                                "name": "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e2b\u0e31\u0e27\u0e40\u0e17\u0e35\u0e22\u0e19",
+                                "color": "redLight2"
+                            },
+                            {
+                                "id": "sel7B0UbWFMCndS43",
+                                "name": "\u0e0b\u0e48\u0e2d\u0e21\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e22\u0e19\u0e15\u0e4c",
+                                "color": "pinkLight2"
+                            },
+                            {
+                                "id": "sel1AdYaMH7Dtpqrd",
+                                "name": "\u0e07\u0e32\u0e19\u0e2d\u0e37\u0e48\u0e19\u0e46",
+                                "color": "purpleLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldY93QiBxccWTxBp",
+                    "name": "job_type"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selsUPCZzOKm4zbbt",
+                                "name": "\u0e40\u0e07\u0e34\u0e19\u0e2a\u0e14 (Cash)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selLW6m0MXm6Uc51Z",
+                                "name": "\u0e42\u0e2d\u0e19 (Transfer)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selgL2tTXPCuKL1Bi",
+                                "name": "\u0e40\u0e04\u0e23\u0e14\u0e34\u0e15 (Credit)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selO5dCW4p3ehCeZ9",
+                                "name": "\u0e2b\u0e25\u0e32\u0e22\u0e0a\u0e48\u0e2d\u0e07\u0e17\u0e32\u0e07 (Mixed)",
+                                "color": "greenLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldRfj1ee2AWcw4Re",
+                    "name": "payment_method"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "sel4X5PM6l6u5PbZD",
+                                "name": "\u0e23\u0e31\u0e1a\u0e07\u0e32\u0e19 (Quoting)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "seldF1fcyskkowyGG",
+                                "name": "\u0e01\u0e33\u0e25\u0e31\u0e07\u0e0b\u0e48\u0e2d\u0e21 (In Progress)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selKNMJAuc56S9btN",
+                                "name": "\u0e40\u0e2a\u0e23\u0e47\u0e08\u0e41\u0e25\u0e49\u0e27 (Complete)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selpFcUgWG4Z5J0Rc",
+                                "name": "\u0e08\u0e48\u0e32\u0e22\u0e41\u0e25\u0e49\u0e27 (Paid)",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selsY8DDzxE6VNtE5",
+                                "name": "\u0e22\u0e01\u0e40\u0e25\u0e34\u0e01 (Cancelled)",
+                                "color": "yellowLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldFrZgrJeBsz9Wr4",
+                    "name": "status"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldvnLgiLv0CQlssB",
+                    "name": "customer_approved"
+                },
+                {
+                    "type": "dateTime",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        },
+                        "timeFormat": {
+                            "name": "24hour",
+                            "format": "HH:mm"
+                        },
+                        "timeZone": "client"
+                    },
+                    "id": "fldaXA8D8zcMNGK1Q",
+                    "name": "quoted_date"
+                },
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "flda7CMX8m00gEoXe",
+                    "name": "start_date"
+                },
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "fldWCv9hNjd5faLQB",
+                    "name": "completion_date_boot"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblUzqKpIx5xOUbvl",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldr6635ElYK2Xo8g"
+                    },
+                    "id": "fldYBzVhGJ3TGZngk",
+                    "name": "parts_used"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldYBzVhGJ3TGZngk",
+                        "fieldIdInLinkedTable": "fldtqlTwzMryZoZIf",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fld3rnumTyGpqlcxE",
+                    "name": "parts_cost_total"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldYBzVhGJ3TGZngk",
+                        "fieldIdInLinkedTable": "fldg5Cj6tGyO87euH",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fld3LdQoCUE8GpIdP",
+                    "name": "parts_sell_total"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldBMViEgQKuyskpd",
+                    "name": "labor_charge"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "sel3kF22JzwOVJWBp",
+                                "name": "Tier 1 \u2014 \u0e07\u0e32\u0e19\u0e40\u0e23\u0e47\u0e27 (Quick)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selmzvTgCcK2xSey7",
+                                "name": "Tier 2 \u2014 \u0e07\u0e32\u0e19\u0e1b\u0e01\u0e15\u0e34 (Standard)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selItdOLa3PbPkq8X",
+                                "name": "Tier 3 \u2014 \u0e07\u0e32\u0e19\u0e1d\u0e35\u0e21\u0e37\u0e2d (Skilled)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selU8K6kfBbWOe74F",
+                                "name": "Tier 4 \u2014 \u0e07\u0e32\u0e19\u0e0b\u0e31\u0e1a\u0e0b\u0e49\u0e2d\u0e19 (Complex)",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selJvFdOQ4fAaUCYn",
+                                "name": "Tier 5 \u2014 \u0e07\u0e32\u0e19\u0e43\u0e2b\u0e0d\u0e48 (Major)",
+                                "color": "yellowLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldfJg6s6IeK4sFGW",
+                    "name": "effort_tier"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldfJg6s6IeK4sFGW} = \"Tier 1 \u2014 \u0e07\u0e32\u0e19\u0e40\u0e23\u0e47\u0e27 (Quick)\", 120,\nIF({fldfJg6s6IeK4sFGW} = \"Tier 2 \u2014 \u0e07\u0e32\u0e19\u0e1b\u0e01\u0e15\u0e34 (Standard)\", 160,\nIF({fldfJg6s6IeK4sFGW} = \"Tier 3 \u2014 \u0e07\u0e32\u0e19\u0e1d\u0e35\u0e21\u0e37\u0e2d (Skilled)\", 200,\nIF({fldfJg6s6IeK4sFGW} = \"Tier 4 \u2014 \u0e07\u0e32\u0e19\u0e0b\u0e31\u0e1a\u0e0b\u0e49\u0e2d\u0e19 (Complex)\", 250,\nIF({fldfJg6s6IeK4sFGW} = \"Tier 5 \u2014 \u0e07\u0e32\u0e19\u0e43\u0e2b\u0e0d\u0e48 (Major)\", 300,\n0)))))",
+                        "referencedFieldIds": [
+                            "fldfJg6s6IeK4sFGW"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldZ13iQj0BMPNjRm",
+                    "name": "tier_rate"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldZ13iQj0BMPNjRm}, {fldZ13iQj0BMPNjRm} * ({fldgdEP5zBJGYUG3n} / 3600), 0)",
+                        "referencedFieldIds": [
+                            "fldZ13iQj0BMPNjRm",
+                            "fldgdEP5zBJGYUG3n"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldDPTshQjUUzlkjk",
+                    "name": "suggested_labor"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fld3LdQoCUE8GpIdP} + {fldDPTshQjUUzlkjk}",
+                        "referencedFieldIds": [
+                            "fld3LdQoCUE8GpIdP",
+                            "fldDPTshQjUUzlkjk"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldkuph8MWMyR1YSv",
+                    "name": "suggested_total"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldwHLPcmtBGHsQYY}, {fldkuph8MWMyR1YSv} - {fldwHLPcmtBGHsQYY}, 0)",
+                        "referencedFieldIds": [
+                            "fldwHLPcmtBGHsQYY",
+                            "fldkuph8MWMyR1YSv"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldBBtA1N8e8mUv4O",
+                    "name": "revenue_gap"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldwHLPcmtBGHsQYY",
+                    "name": "quoted_price"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fld3LdQoCUE8GpIdP} + {fldBMViEgQKuyskpd}",
+                        "referencedFieldIds": [
+                            "fld3LdQoCUE8GpIdP",
+                            "fldBMViEgQKuyskpd"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldmKp3jeydRW7vY1",
+                    "name": "estimated_total"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldWp53US3CM2TRIH",
+                    "name": "total_collected"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldWp53US3CM2TRIH} - ({fld3LdQoCUE8GpIdP} + {fldBMViEgQKuyskpd})",
+                        "referencedFieldIds": [
+                            "fldWp53US3CM2TRIH",
+                            "fld3LdQoCUE8GpIdP",
+                            "fldBMViEgQKuyskpd"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldET833YK3MMXHG1",
+                    "name": "collection_discrepancy"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fld3rnumTyGpqlcxE}",
+                        "referencedFieldIds": [
+                            "fld3rnumTyGpqlcxE"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldmEPATTVCotPOR1",
+                    "name": "true_cost"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldwHLPcmtBGHsQYY}, {fldwHLPcmtBGHsQYY} - {fld3rnumTyGpqlcxE}, 0)",
+                        "referencedFieldIds": [
+                            "fldwHLPcmtBGHsQYY",
+                            "fld3rnumTyGpqlcxE"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "flduac9CAPBrO9vMP",
+                    "name": "true_margin"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldwHLPcmtBGHsQYY}, ({fldwHLPcmtBGHsQYY} - {fld3rnumTyGpqlcxE}) / {fldwHLPcmtBGHsQYY}, 0)",
+                        "referencedFieldIds": [
+                            "fldwHLPcmtBGHsQYY",
+                            "fld3rnumTyGpqlcxE"
+                        ],
+                        "result": {
+                            "type": "percent",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fld5pjbI4sxARo2Xj",
+                    "name": "margin_pct"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tbl6LpfplyCy1ADXl",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldZuWBnmdpC3tXR8"
+                    },
+                    "id": "fldibT9SI68xQT3om",
+                    "name": "Sales"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(AND({fldWCv9hNjd5faLQB}, {flda7CMX8m00gEoXe}), DATETIME_DIFF({fldWCv9hNjd5faLQB}, {flda7CMX8m00gEoXe}, 'days') + 1, BLANK())",
+                        "referencedFieldIds": [
+                            "fldWCv9hNjd5faLQB",
+                            "flda7CMX8m00gEoXe"
+                        ],
+                        "result": {
+                            "type": "number",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fld1CqSftXpKND9bk",
+                    "name": "job_duration_days"
+                },
+                {
+                    "type": "duration",
+                    "options": {
+                        "durationFormat": "h:mm"
+                    },
+                    "id": "fldgdEP5zBJGYUG3n",
+                    "name": "estimated_hours"
+                },
+                {
+                    "type": "duration",
+                    "options": {
+                        "durationFormat": "h:mm"
+                    },
+                    "id": "fldLFroXAlv8Fzbd3",
+                    "name": "actual_hours"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldLFroXAlv8Fzbd3}, {fldBMViEgQKuyskpd} / ({fldLFroXAlv8Fzbd3} / 3600), 0)",
+                        "referencedFieldIds": [
+                            "fldLFroXAlv8Fzbd3",
+                            "fldBMViEgQKuyskpd"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldcdbz1CD6zYPI5y",
+                    "name": "hourly_rate_applied"
+                },
+                {
+                    "type": "richText",
+                    "id": "fldkBcaDZhEibe0eT",
+                    "name": "notes"
+                },
+                {
+                    "type": "richText",
+                    "id": "fldEMvobiwpIFtfOJ",
+                    "name": "boot_advice_for_mai"
+                },
+                {
+                    "type": "button",
+                    "id": "fldEyXjvj7p6yuHcZ",
+                    "name": "print_work_order"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(ARRAYJOIN({fldcYfKqN4ssSD6mr}, \", \"), ARRAYJOIN({fldcYfKqN4ssSD6mr}, \", \"), \"\") & IF({fldJcvH6K7x33hfmF}, IF(ARRAYJOIN({fldcYfKqN4ssSD6mr}, \", \"), \" | \", \"\") & {fldJcvH6K7x33hfmF}, \"\") & \"\\n\" & ARRAYJOIN({fldY93QiBxccWTxBp}, \", \") & \"\\n\" & IF({fldfJg6s6IeK4sFGW}, LEFT({fldfJg6s6IeK4sFGW}, FIND(\" \u2014\", {fldfJg6s6IeK4sFGW}) - 1), \"\") & IF({fldgdEP5zBJGYUG3n}, \" | \" & IF({fldgdEP5zBJGYUG3n} >= 3600, INT({fldgdEP5zBJGYUG3n} / 3600) & \" \u0e0a\u0e21.\", INT({fldgdEP5zBJGYUG3n} / 60) & \" \u0e19\u0e32\u0e17\u0e35\"), \"\") & IF({fldwHLPcmtBGHsQYY}, \" | \u0e3f\" & INT({fldwHLPcmtBGHsQYY}), \"\")",
+                        "referencedFieldIds": [
+                            "fldcYfKqN4ssSD6mr",
+                            "fldJcvH6K7x33hfmF",
+                            "fldY93QiBxccWTxBp",
+                            "fldfJg6s6IeK4sFGW",
+                            "fldgdEP5zBJGYUG3n",
+                            "fldwHLPcmtBGHsQYY"
+                        ],
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldakJQChROCtGdlR",
+                    "name": "card_summary",
+                    "description": "FOR REPAIR JOBS INTERFACE"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwcjmpp6RIFuZrJa",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwej0xYjajVUr42b",
+                    "name": "Active Jobs",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwfNyUwhiqxxxuNO",
+                    "name": "Job Margin Analysis",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwP62hPNcKEuvvQu",
+                    "name": "Parts Usage",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwH7NDZuPtjo7Ag4",
+                    "name": "By Vehicle",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwr4xUh2F3gnVRsW",
+                    "name": "\ud83d\udcca Revenue Gap",
+                    "type": "grid"
+                },
+                {
+                    "id": "viw7hxXvFlbeANY7f",
+                    "name": "\ud83d\udcb0 By Effort Tier",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwXlfSaOWwZ1Oxc8",
+                    "name": "\u23f1 Time Accuracy",
+                    "type": "grid"
+                },
+                {
+                    "id": "viw4V6L4x6aLYNOfP",
+                    "name": "\ud83d\udc64 By Customer",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwAxbPHxzijRxx4w",
+                    "name": "\u274c Cancelled Jobs",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblUzqKpIx5xOUbvl",
+            "name": "Repair Job Parts",
+            "primaryFieldId": "fldMbueqeul7Lw5ak",
+            "fields": [
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldBQAcNNREKrQRxz} & \" \u00d7 \" & {fldtSX4lYXyItqjb6} & \" | \u0e3f\" & {fldzuZd6t7hZZlp7S} & \" (\u0e2a\u0e15\u0e47\u0e2d\u0e01: \" & {fld3TnCO2h8VXz90V} & \")\"",
+                        "referencedFieldIds": [
+                            "fldBQAcNNREKrQRxz",
+                            "fldtSX4lYXyItqjb6",
+                            "fldzuZd6t7hZZlp7S",
+                            "fld3TnCO2h8VXz90V"
+                        ],
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldMbueqeul7Lw5ak",
+                    "name": "part_details"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblu4Q5KQfh4lNPNp",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldYBzVhGJ3TGZngk"
+                    },
+                    "id": "fldr6635ElYK2Xo8g",
+                    "name": "repair_job"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblyxE4AkZ6vaQg0f",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fldZB6EZ5OmlUrst5"
+                    },
+                    "id": "fldNk2nl5I1m7kmW1",
+                    "name": "product"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fldtSX4lYXyItqjb6",
+                    "name": "quantity"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldNk2nl5I1m7kmW1",
+                        "fieldIdInLinkedTable": "fldukO6RVNrMmHtT5",
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "flduXpsTRpixhR8lk",
+                    "name": "sell_price_normal"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldgmV0VgaKmhYmPL",
+                    "name": "sell_price_override"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldgmV0VgaKmhYmPL}, {fldgmV0VgaKmhYmPL}, {flduXpsTRpixhR8lk})",
+                        "referencedFieldIds": [
+                            "fldgmV0VgaKmhYmPL",
+                            "flduXpsTRpixhR8lk"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldzuZd6t7hZZlp7S",
+                    "name": "sell_price_final"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldzuZd6t7hZZlp7S} * {fldtSX4lYXyItqjb6}",
+                        "referencedFieldIds": [
+                            "fldzuZd6t7hZZlp7S",
+                            "fldtSX4lYXyItqjb6"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldg5Cj6tGyO87euH",
+                    "name": "customer_pays_total"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldNk2nl5I1m7kmW1",
+                        "fieldIdInLinkedTable": "flde0MXsty5ahHIUO",
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldBQAcNNREKrQRxz",
+                    "name": "product_name_lookup"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldNk2nl5I1m7kmW1",
+                        "fieldIdInLinkedTable": "fldLcTR31Rq6NJico",
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldVskjsiYwp28SeF",
+                    "name": "shop_cost_per_unit"
+                },
+                {
+                    "type": "multipleLookupValues",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldNk2nl5I1m7kmW1",
+                        "fieldIdInLinkedTable": "fldE8U8pWc763hfmr",
+                        "result": {
+                            "type": "number",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fld3TnCO2h8VXz90V",
+                    "name": "stock_lookup"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldVskjsiYwp28SeF} * {fldtSX4lYXyItqjb6}",
+                        "referencedFieldIds": [
+                            "fldVskjsiYwp28SeF",
+                            "fldtSX4lYXyItqjb6"
+                        ],
+                        "result": {
+                            "type": "number",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fldtqlTwzMryZoZIf",
+                    "name": "shop_cost_total"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwaUrlM6BL9jhFea",
+                    "name": "Master",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblyxE4AkZ6vaQg0f",
+            "name": "Products",
+            "primaryFieldId": "fldhopOBrfnA9NMp4",
+            "fields": [
+                {
+                    "type": "singleLineText",
+                    "id": "fldhopOBrfnA9NMp4",
+                    "name": "sku"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "flde0MXsty5ahHIUO",
+                    "name": "display_name"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fldE8U8pWc763hfmr",
+                    "name": "current_stock",
+                    "description": "The live inventory count. Updated by automations on sale/purchase. Initialize from the inventory count data."
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldevyyQzSLUj6Vzm",
+                    "name": "display name_ is_not_shown"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldxhELSe3koFlQuY",
+                    "name": "NEED TO CONFIRM WITH PINIT"
+                },
+                {
+                    "type": "multilineText",
+                    "id": "fldoMvqaA5hrhztM2",
+                    "name": "original_name"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selhsQiBilra8N0LE",
+                                "name": "\u0e01\u0e23\u0e30\u0e08\u0e01/\u0e15\u0e31\u0e27\u0e16\u0e31\u0e07 (Mirrors & Body)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selP2U7rMucbG6xmX",
+                                "name": "\u0e40\u0e01\u0e35\u0e22\u0e23\u0e4c (Transmission)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "sele3Jw3LRBOIYhQx",
+                                "name": "\u0e04\u0e25\u0e31\u0e15\u0e0a\u0e4c (Clutch)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selAGslD0iq4uxlT5",
+                                "name": "\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e22\u0e19\u0e15\u0e4c (Engine Internal)",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selAUSWKHju2WXzT4",
+                                "name": "\u0e42\u0e0a\u0e4a\u0e04\u0e2d\u0e31\u0e1e (Shocks)",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "sel1Ef10REZ5YEm8D",
+                                "name": "\u0e42\u0e0b\u0e48/\u0e2a\u0e40\u0e15\u0e2d\u0e23\u0e4c (Chain & Sprocket)",
+                                "color": "orangeLight2"
+                            },
+                            {
+                                "id": "selOh8khCZdv0IUFj",
+                                "name": "\u0e17\u0e48\u0e2d\u0e44\u0e2d\u0e40\u0e2a\u0e35\u0e22 (Exhaust)",
+                                "color": "redLight2"
+                            },
+                            {
+                                "id": "sels4hBbdZUUSua9o",
+                                "name": "\u0e19\u0e49\u0e33\u0e21\u0e31\u0e19 (Oils & Fluids)",
+                                "color": "pinkLight2"
+                            },
+                            {
+                                "id": "selbGuAkpm8nJDwzo",
+                                "name": "\u0e19\u0e49\u0e33\u0e21\u0e31\u0e19\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07 (Engine Oil)",
+                                "color": "purpleLight2"
+                            },
+                            {
+                                "id": "selOkDcXj6oeNa3Tf",
+                                "name": "\u0e40\u0e1a\u0e23\u0e01 (Brakes)",
+                                "color": "grayLight2"
+                            },
+                            {
+                                "id": "selIULcRzeCc21KBx",
+                                "name": "\u0e41\u0e1a\u0e15\u0e40\u0e15\u0e2d\u0e23\u0e35\u0e48 (Batteries)",
+                                "color": "blueLight1"
+                            },
+                            {
+                                "id": "selHxT38anfAX6ws9",
+                                "name": "\u0e1c\u0e49\u0e32\u0e40\u0e1a\u0e23\u0e01 (Brake Pads)",
+                                "color": "cyanLight1"
+                            },
+                            {
+                                "id": "selVQD1Gd4aEaMHpy",
+                                "name": "\u0e1e\u0e31\u0e01\u0e40\u0e17\u0e49\u0e32/\u0e41\u0e2e\u0e19\u0e14\u0e4c (Pegs & Bars)",
+                                "color": "tealLight1"
+                            },
+                            {
+                                "id": "sel4PeAOD2cumeHzM",
+                                "name": "\u0e21\u0e37\u0e2d\u0e40\u0e1a\u0e23\u0e01/\u0e21\u0e37\u0e2d\u0e04\u0e25\u0e31\u0e15\u0e0a\u0e4c (Levers)",
+                                "color": "greenLight1"
+                            },
+                            {
+                                "id": "sel5Qy5Jj0HRIBJOU",
+                                "name": "\u0e44\u0e21\u0e48\u0e23\u0e30\u0e1a\u0e38 (Uncategorized)",
+                                "color": "yellowLight1"
+                            },
+                            {
+                                "id": "selb41r1mkmUfGWTE",
+                                "name": "\u0e22\u0e32\u0e07 (Tires)",
+                                "color": "orangeLight1"
+                            },
+                            {
+                                "id": "sel3Q8fNkK1NikxBD",
+                                "name": "\u0e22\u0e32\u0e07\u0e43\u0e19 (Inner Tubes)",
+                                "color": "redLight1"
+                            },
+                            {
+                                "id": "selMr7oPti7RWow0W",
+                                "name": "\u0e23\u0e30\u0e1a\u0e1a\u0e40\u0e0a\u0e37\u0e49\u0e2d\u0e40\u0e1e\u0e25\u0e34\u0e07 (Fuel System)",
+                                "color": "pinkLight1"
+                            },
+                            {
+                                "id": "sel4HI1AGbKCfAim6",
+                                "name": "\u0e23\u0e30\u0e1a\u0e1a\u0e44\u0e1f (Electrical)",
+                                "color": "purpleLight1"
+                            },
+                            {
+                                "id": "selD5i9ZEb54WGivV",
+                                "name": "\u0e23\u0e30\u0e1a\u0e1a\u0e23\u0e2d\u0e07\u0e23\u0e31\u0e1a (Suspension/Chassis)",
+                                "color": "grayLight1"
+                            },
+                            {
+                                "id": "selnd8c8oVmOgwgBT",
+                                "name": "\u0e25\u0e49\u0e2d (Wheels)",
+                                "color": "blueBright"
+                            },
+                            {
+                                "id": "seleaUrk1sVV3nzhw",
+                                "name": "\u0e2a\u0e32\u0e22/\u0e17\u0e48\u0e2d (Cables & Hoses)",
+                                "color": "cyanBright"
+                            },
+                            {
+                                "id": "selRJEdIHDWeQfSvx",
+                                "name": "\u0e44\u0e2a\u0e49\u0e01\u0e23\u0e2d\u0e07 (Filters)",
+                                "color": "tealBright"
+                            },
+                            {
+                                "id": "sel044kUGhdxJ5WWL",
+                                "name": "\u0e2b\u0e25\u0e2d\u0e14\u0e44\u0e1f (Lights)",
+                                "color": "greenBright"
+                            },
+                            {
+                                "id": "selGHvIR8r7oeYlT5",
+                                "name": "\u0e2b\u0e31\u0e27\u0e40\u0e17\u0e35\u0e22\u0e19 (Spark Plugs)",
+                                "color": "yellowBright"
+                            },
+                            {
+                                "id": "selOI4qJZBW7yNJr6",
+                                "name": "\u0e2d\u0e30\u0e44\u0e2b\u0e25\u0e48\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e15\u0e31\u0e14\u0e2b\u0e0d\u0e49\u0e32 (Trimmer Parts)",
+                                "color": "orangeBright"
+                            },
+                            {
+                                "id": "selNMp6JotB8hLpl9",
+                                "name": "\u0e2d\u0e30\u0e44\u0e2b\u0e25\u0e48\u0e15\u0e01\u0e41\u0e15\u0e48\u0e07 (Accessories)",
+                                "color": "redBright"
+                            },
+                            {
+                                "id": "selAiFfUMfNhZO3zW",
+                                "name": "\u0e2d\u0e30\u0e44\u0e2b\u0e25\u0e48\u0e1b\u0e31\u0e4a\u0e21\u0e19\u0e49\u0e33 (Water Pump Parts)",
+                                "color": "pinkBright"
+                            },
+                            {
+                                "id": "selVESQs6AXHQ0NVJ",
+                                "name": "\u0e2d\u0e30\u0e44\u0e2b\u0e25\u0e48\u0e23\u0e16\u0e44\u0e16 (Tractor Parts)",
+                                "color": "purpleBright"
+                            },
+                            {
+                                "id": "selPtF9tdhCrLb3FP",
+                                "name": "\u0e2d\u0e30\u0e44\u0e2b\u0e25\u0e48\u0e40\u0e25\u0e37\u0e48\u0e2d\u0e22\u0e22\u0e19\u0e15\u0e4c (Chainsaw Parts)",
+                                "color": "grayBright"
+                            },
+                            {
+                                "id": "selCMzVyeBa4YKyXM",
+                                "name": "\u0e04\u0e48\u0e32\u0e41\u0e23\u0e07 (Labor)",
+                                "color": "blueDark1"
+                            }
+                        ]
+                    },
+                    "id": "fldmbaJmZfzccRhZr",
+                    "name": "category"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldLcTR31Rq6NJico",
+                    "name": "last_known_cost_baht"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldukO6RVNrMmHtT5",
+                    "name": "last_known_sell_price_baht"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldLq8zBKiVtL3QUq",
+                    "name": "sell_price_is_not_correct_on QR Code"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldLcTR31Rq6NJico}=0, 0, ({fldukO6RVNrMmHtT5}-{fldLcTR31Rq6NJico})/{fldLcTR31Rq6NJico})",
+                        "referencedFieldIds": [
+                            "fldLcTR31Rq6NJico",
+                            "fldukO6RVNrMmHtT5"
+                        ],
+                        "result": {
+                            "type": "percent",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fldVkxjvhZp4Ohfpy",
+                    "name": "margin_pct"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldAm0TyVu9D5xk5Y",
+                    "name": "repair_price_total"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldAm0TyVu9D5xk5Y}, {fldAm0TyVu9D5xk5Y} - {fldukO6RVNrMmHtT5}, BLANK())",
+                        "referencedFieldIds": [
+                            "fldAm0TyVu9D5xk5Y",
+                            "fldukO6RVNrMmHtT5"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldanz716zl0lwUno",
+                    "name": "implied_labor_charge"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldAm0TyVu9D5xk5Y}, TRUE(), FALSE())",
+                        "referencedFieldIds": [
+                            "fldAm0TyVu9D5xk5Y"
+                        ],
+                        "result": {
+                            "type": "checkbox",
+                            "options": {
+                                "icon": "check",
+                                "color": "greenBright"
+                            }
+                        }
+                    },
+                    "id": "fldFoIa17KNbHyUPq",
+                    "name": "is_repair_product"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "sel6zMhEIerCrT96v",
+                                "name": "Shopee",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selcZUQItEFyJV6Dx",
+                                "name": "Wholesale",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selMxyEEIb2pFCQLc",
+                                "name": "Mixed",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selRxsc8lA99EFV5q",
+                                "name": "sourced_via",
+                                "color": "blueLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldJwA94cXF2y9ful",
+                    "name": "sourced_via"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblaqQYuO8yS24O3R",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fldNzG4PZg1nnixlH"
+                    },
+                    "id": "fld1j8G420s9epaji",
+                    "name": "supplier_primary"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblaqQYuO8yS24O3R",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fld3L55EZNz3N1XCo"
+                    },
+                    "id": "fldFRSHosugruolZI",
+                    "name": "supplier_alternates"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblY4vLuOly85jKBa",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldI7UE2xkWJVy1hK"
+                    },
+                    "id": "fldz8T53LHGDBaJjg",
+                    "name": "vehicle_compatibility"
+                },
+                {
+                    "type": "multipleSelects",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "seladce5ECawY0Hef",
+                                "name": "100",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "sel1peCZqSAYN4jJP",
+                                "name": "110",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "seldEZcMOayDKBPNF",
+                                "name": "125",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selc1vzo7Jx03LoVf",
+                                "name": "150",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selBD3gmYThYB4YJA",
+                                "name": "155",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "selyyfNGOfBz070E9",
+                                "name": "160",
+                                "color": "orangeLight2"
+                            },
+                            {
+                                "id": "selExRZjgeeSlOgz7",
+                                "name": "250+",
+                                "color": "redLight2"
+                            },
+                            {
+                                "id": "selOvHBPSuh250ij9",
+                                "name": "Car/Truck",
+                                "color": "pinkLight2"
+                            },
+                            {
+                                "id": "selD5kQ7JHZ6h5IMq",
+                                "name": "N/A",
+                                "color": "purpleLight2"
+                            },
+                            {
+                                "id": "selgKsuLaJUHvqLTB",
+                                "name": "engine_size_cc",
+                                "color": "blueLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldrPzcGLFTWWcizp",
+                    "name": "engine_size_cc"
+                },
+                {
+                    "type": "multipleSelects",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selZuolBye2IiWI8R",
+                                "name": "Carburetor",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "seln0RcLxVgvftMFp",
+                                "name": "EFI",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selQKpMJjKBcIVi45",
+                                "name": "Diesel",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selXEUZy1baZ3eLDK",
+                                "name": "2-stroke",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "sel1GHlwkwARRH5q2",
+                                "name": "N/A",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "sel4aJm5nbNo98FyC",
+                                "name": "fuel_system",
+                                "color": "blueLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldxBOt6Qzin0lUeb",
+                    "name": "fuel_system"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "sela66Oc2BFfYibSh",
+                                "name": "Consumable",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "sel1XHgO4I92LtpdI",
+                                "name": "Durable",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selJ2vxjqEm5ZSV6Q",
+                                "name": "Service Item",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selscCzQrq2iu4U1N",
+                                "name": "part_type",
+                                "color": "blueLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldrifgtHKWWY4EgP",
+                    "name": "part_type"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldSs2XbhTw5yS9ng",
+                    "name": "is_restock_item"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fldZXhMg5TXbAvotB",
+                    "name": "lead_time_days"
+                },
+                {
+                    "type": "multilineText",
+                    "id": "fldupxe58tzHw8cmu",
+                    "name": "notes"
+                },
+                {
+                    "type": "url",
+                    "id": "fldx1ZiSA4Fq8Ih53",
+                    "name": "image_url"
+                },
+                {
+                    "type": "dateTime",
+                    "options": {
+                        "dateFormat": {
+                            "name": "local",
+                            "format": "l"
+                        },
+                        "timeFormat": {
+                            "name": "24hour",
+                            "format": "HH:mm"
+                        },
+                        "timeZone": "client"
+                    },
+                    "id": "fldMlODN5o5q6jYsw",
+                    "name": "last_synced_at"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldZB6EZ5OmlUrst5",
+                        "fieldIdInLinkedTable": "fldr6635ElYK2Xo8g",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "singleLineText"
+                        }
+                    },
+                    "id": "fldMs88PI7cpeja4Y",
+                    "name": "times_used_in_specialized_repairs"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblzfTme1hneJOfKk",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldCkn4waY5jesncJ"
+                    },
+                    "id": "fld0RFfkbXqSt27zP",
+                    "name": "Sale Line Items"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblc6kOrRkRAr1VCm",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldUobp0cdW807H7q"
+                    },
+                    "id": "fldtshdqdAFavpZxE",
+                    "name": "Purchase Line Items"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fld25dADD13UjoOM9",
+                    "name": "low_stock_threshold",
+                    "description": "Products below this trigger an alert."
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF(AND({fldE8U8pWc763hfmr} <= {fld25dADD13UjoOM9}, {fldmbaJmZfzccRhZr} != \"\u0e04\u0e48\u0e32\u0e41\u0e23\u0e07 (Labor & Services)\"), TRUE(), FALSE())",
+                        "referencedFieldIds": [
+                            "fldE8U8pWc763hfmr",
+                            "fld25dADD13UjoOM9",
+                            "fldmbaJmZfzccRhZr"
+                        ],
+                        "result": {
+                            "type": "checkbox",
+                            "options": {
+                                "icon": "check",
+                                "color": "greenBright"
+                            }
+                        }
+                    },
+                    "id": "fldvls7hbWBHXygEN",
+                    "name": "is_low_stock"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fld0RFfkbXqSt27zP",
+                        "fieldIdInLinkedTable": "fldC5JoBfLRQ4CW04",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "number",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fldLVbqF5C1qUnmwM",
+                    "name": "total_units_sold"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fld0RFfkbXqSt27zP",
+                        "fieldIdInLinkedTable": "flddOUUq7Elu2vKfE",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldiE2dZYsDUfbP6c",
+                    "name": "total_revenue"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblUzqKpIx5xOUbvl",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldNk2nl5I1m7kmW1"
+                    },
+                    "id": "fldZB6EZ5OmlUrst5",
+                    "name": "Repair Job Parts"
+                },
+                {
+                    "type": "multipleAttachments",
+                    "options": {
+                        "isReversed": false
+                    },
+                    "id": "fldSFCWkUrD7ogKy8",
+                    "name": "product_photo"
+                },
+                {
+                    "type": "multipleAttachments",
+                    "options": {
+                        "isReversed": false
+                    },
+                    "id": "fldmp7XI1Ls9vCQ6O",
+                    "name": "QR Code Label"
+                },
+                {
+                    "type": "createdTime",
+                    "options": {
+                        "result": {
+                            "type": "dateTime",
+                            "options": {
+                                "dateFormat": {
+                                    "name": "european",
+                                    "format": "D/M/YYYY"
+                                },
+                                "timeFormat": {
+                                    "name": "12hour",
+                                    "format": "h:mma"
+                                },
+                                "timeZone": "Asia/Bangkok"
+                            }
+                        }
+                    },
+                    "id": "fldDndyeTxtP9BGOw",
+                    "name": "Created"
+                },
+                {
+                    "type": "lastModifiedTime",
+                    "options": {
+                        "isValid": true,
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "dateTime",
+                            "options": {
+                                "dateFormat": {
+                                    "name": "european",
+                                    "format": "D/M/YYYY"
+                                },
+                                "timeFormat": {
+                                    "name": "24hour",
+                                    "format": "HH:mm"
+                                },
+                                "timeZone": "Asia/Bangkok"
+                            }
+                        }
+                    },
+                    "id": "fldsAeDHICbyHJLln",
+                    "name": "Last Modified"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldsklqA2FHgzRxrh",
+                    "name": "show_repair_on_label"
+                },
+                {
+                    "type": "button",
+                    "id": "fldf7hNIa13fo1nG8",
+                    "name": "print_40x20"
+                },
+                {
+                    "type": "button",
+                    "id": "fld9UWxD6kgnD47AQ",
+                    "name": "print_40x30"
+                },
+                {
+                    "type": "button",
+                    "id": "fldFPRJSl0sIr7t67",
+                    "name": "print_70x30"
+                },
+                {
+                    "type": "button",
+                    "id": "fldv1cN3hljz2sWVg",
+                    "name": "print_70x50"
+                },
+                {
+                    "type": "barcode",
+                    "id": "fldq90SrikPdiHBw8",
+                    "name": "barcode"
+                },
+                {
+                    "type": "lastModifiedBy",
+                    "id": "fldwcft2aquCnGnuq",
+                    "name": "Last Modified By"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldE8U8pWc763hfmr}, {fldE8U8pWc763hfmr} * {fldLcTR31Rq6NJico}, 0)",
+                        "referencedFieldIds": [
+                            "fldE8U8pWc763hfmr",
+                            "fldLcTR31Rq6NJico"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldWxUGEDtN65vRvN",
+                    "name": "stock_value_cost"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldE8U8pWc763hfmr}, {fldE8U8pWc763hfmr} * {fldukO6RVNrMmHtT5}, 0)",
+                        "referencedFieldIds": [
+                            "fldE8U8pWc763hfmr",
+                            "fldukO6RVNrMmHtT5"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldZs5g6AKx4l3xzn",
+                    "name": "stock_value_sell"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldZs5g6AKx4l3xzn} - {fldWxUGEDtN65vRvN}",
+                        "referencedFieldIds": [
+                            "fldZs5g6AKx4l3xzn",
+                            "fldWxUGEDtN65vRvN"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldPKB55kqiGOuWAO",
+                    "name": "stock_value_profit"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldE8U8pWc763hfmr}, {fldLVbqF5C1qUnmwM} / ({fldE8U8pWc763hfmr} + {fldLVbqF5C1qUnmwM}), 0)",
+                        "referencedFieldIds": [
+                            "fldE8U8pWc763hfmr",
+                            "fldLVbqF5C1qUnmwM"
+                        ],
+                        "result": {
+                            "type": "percent",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fldRvtqemoRJI4yW2",
+                    "name": "sell_through_rate"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldg6xZHeythYT8M1",
+                    "name": "has_been_counted"
+                },
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "fldHU8iho93C9j379",
+                    "name": "counted_date"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldp8GDTiBM6TXStY",
+                    "name": "counted_by"
+                },
+                {
+                    "type": "autoNumber",
+                    "id": "fldtmGirXbLePgsdB",
+                    "name": "auto_seq"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldwcft2aquCnGnuq} = \"Supatra Rasri\", 1, 0)",
+                        "referencedFieldIds": [
+                            "fldwcft2aquCnGnuq"
+                        ],
+                        "result": {
+                            "type": "number",
+                            "options": {
+                                "precision": 0
+                            }
+                        }
+                    },
+                    "id": "fld5ZaaL2zYvqzs1X",
+                    "name": "Last Modified by Mint"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwqT7TTwnCui8mBt",
+                    "name": "Master ",
+                    "type": "grid"
+                },
+                {
+                    "id": "viw0lh4E6h4d5lZah",
+                    "name": "Restock Items",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwBrtquOGlE3LaJz",
+                    "name": "Needs Enrichment ",
+                    "type": "grid"
+                },
+                {
+                    "id": "viw7VNij5P8g88pIx",
+                    "name": "By Supplier",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwYhsG7k2vsAEX9z",
+                    "name": "By Vehicle",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwemOp9wK7UDDyPi",
+                    "name": "Margin Analysis",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwb0M8vesxCLpOTh",
+                    "name": "Honda OEM Only",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwpO7sMLwZCBYZJP",
+                    "name": "No Supplier Yet",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwSywaI8H9ta4zy2",
+                    "name": "Repair Pricing",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwOTEMICwYTCVWU5",
+                    "name": "By Specialized Repairs Usage",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwfr0ypUMN78H7hM",
+                    "name": "Repair Analysis - highest margin",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwaZdMggRrHy4H6A",
+                    "name": "Repair Analysis - avg labor charge",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwRkJwLo2gwpBNn8",
+                    "name": "Repair Analysis - underpriced products",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwDc8eJHGQIVhNyf",
+                    "name": "\u26a0\ufe0f Low Stock",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwNYkpZV3F0hZhHk",
+                    "name": "Mint Inventory",
+                    "type": "grid"
+                },
+                {
+                    "id": "viw2piUi63ZApU78W",
+                    "name": "Bad Labels",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwcC41ghT5RT1ux3",
+                    "name": "Have Stock",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwXmlrfMi39daDms",
+                    "name": "Print QR Code Labels",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwE1goSJ7fqgcqLk",
+                    "name": "Labor Products (for Repair Jobs)",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblaqQYuO8yS24O3R",
+            "name": "Suppliers",
+            "primaryFieldId": "fldVd67IrpUi8qL2D",
+            "fields": [
+                {
+                    "type": "singleLineText",
+                    "id": "fldVd67IrpUi8qL2D",
+                    "name": "supplier_id"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldF5Uv8W4EsUQqX5",
+                    "name": "display_name"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "sel1h0nKTQlzfMCKl",
+                                "name": "Wholesale (in-person)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selFqvDwQSlciVu78",
+                                "name": "Shopee shop",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selslVSa8a5qgBgf1",
+                                "name": "Other",
+                                "color": "tealLight2"
+                            }
+                        ]
+                    },
+                    "id": "fld7itW4ByZhVpDG4",
+                    "name": "supplier_type"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldaTfrtSuKxJ4KRe",
+                    "name": "is_preferred"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "flds82YQn5D7p4jVc",
+                    "name": "total_orders_lifetime "
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 2,
+                        "symbol": "THB"
+                    },
+                    "id": "fldAIC3thDHyijtHp",
+                    "name": "total_spent_lifetime_baht"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldHgpeXWpKmPdJVU",
+                    "name": "payment_terms "
+                },
+                {
+                    "type": "phoneNumber",
+                    "id": "flds7GmYQXg6S2qgX",
+                    "name": "phone "
+                },
+                {
+                    "type": "multilineText",
+                    "id": "fldzG0kKFTTAO4Orw",
+                    "name": "notes"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fldFqKkM2ZJrctk3C",
+                    "name": "shopee_shop_id "
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblyxE4AkZ6vaQg0f",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldFRSHosugruolZI"
+                    },
+                    "id": "fld3L55EZNz3N1XCo",
+                    "name": "products_supplied_alternate"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblyxE4AkZ6vaQg0f",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fld1j8G420s9epaji"
+                    },
+                    "id": "fldNzG4PZg1nnixlH",
+                    "name": "products_supplied"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblcgtMtqqtAPGP3O",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldncqm5sA8j5JTJW"
+                    },
+                    "id": "fldkUYJKXCFyKHOSU",
+                    "name": "Purchases"
+                },
+                {
+                    "type": "lastModifiedBy",
+                    "id": "fldvS4TS9RRiViPxc",
+                    "name": "last_moditfied_by"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwh99Xm2dbQmFKJF",
+                    "name": "Master",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblY4vLuOly85jKBa",
+            "name": "Vehicles",
+            "primaryFieldId": "fldiyvRn3FPPml69E",
+            "fields": [
+                {
+                    "type": "singleLineText",
+                    "id": "fldiyvRn3FPPml69E",
+                    "name": "display_name"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldFo0v2CgioKdQFv",
+                    "name": "vehicle_id"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selDSm3vJek6sI2G8",
+                                "name": "Honda",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selQCgLQmxgASvOYj",
+                                "name": "Yamaha",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "sel8lk8QFmPAKO69b",
+                                "name": "Suzuki",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "seldmsVE0EoV0FUuZ",
+                                "name": "Kawasaki",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selc3EhWJPb6quI25",
+                                "name": "Toyota",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "selapiSO99BkhchlG",
+                                "name": "Isuzu",
+                                "color": "orangeLight2"
+                            },
+                            {
+                                "id": "selLQPLd0C4bm2m56",
+                                "name": "Ford",
+                                "color": "redLight2"
+                            },
+                            {
+                                "id": "sel5Kt5QEvijHUsxn",
+                                "name": "Nissan",
+                                "color": "pinkLight2"
+                            },
+                            {
+                                "id": "selPfVwzEDTngSe4n",
+                                "name": "Kubota",
+                                "color": "purpleLight2"
+                            },
+                            {
+                                "id": "selRAjmnIc4AD1bT0",
+                                "name": "Yanmar",
+                                "color": "grayLight2"
+                            },
+                            {
+                                "id": "selPbT2DreC4DCmlg",
+                                "name": "Other",
+                                "color": "blueLight1"
+                            },
+                            {
+                                "id": "selhzyP3RJraJY9sH",
+                                "name": "brand",
+                                "color": "blueLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldLTEyCoQ1H1f6GK",
+                    "name": "brand"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selRPwtDRMWTh89rb",
+                                "name": "Motorbike",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selrnTPV30MfzOf9b",
+                                "name": "Scooter",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "sel8BPMm07cz6SgEB",
+                                "name": "Car",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selNHv9KzP5udIm9K",
+                                "name": "Truck",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "selJ42NKrXiZB0HMI",
+                                "name": "Tractor",
+                                "color": "orangeLight2"
+                            },
+                            {
+                                "id": "sel8e5LjLDf58zAzA",
+                                "name": "Water Pump",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "sel3wbVr2iBx3iMJn",
+                                "name": "Chainsaw,",
+                                "color": "redLight2"
+                            },
+                            {
+                                "id": "selXhduduhhfEnFET",
+                                "name": "Other",
+                                "color": "pinkLight2"
+                            },
+                            {
+                                "id": "selnUzhfKmPawsS8q",
+                                "name": "vehicle_class",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selHeRQJSCdVtdVK7",
+                                "name": "Chainsaw",
+                                "color": "cyanLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldyMBvwcmf4Xa9vi",
+                    "name": "vehicle_class"
+                },
+                {
+                    "type": "number",
+                    "options": {
+                        "precision": 0
+                    },
+                    "id": "fld4rAW5hZGSzsere",
+                    "name": "engine_size_cc "
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selAfR9eRlQtJjEeu",
+                                "name": "Carburetor",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selCXgsoUnvIv0ISZ",
+                                "name": "EFI",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selBai40fNGIxf8UI",
+                                "name": "Diesel",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selJMsrWCELtaoT9c",
+                                "name": "2-stroke",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "seleytlVxiTtWOWvP",
+                                "name": "Mixed",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "sel1cAfyY97JTSyHo",
+                                "name": "N/A",
+                                "color": "orangeLight2"
+                            },
+                            {
+                                "id": "selspRmMucSGsIjRd",
+                                "name": "fuel_system",
+                                "color": "blueLight2"
+                            }
+                        ]
+                    },
+                    "id": "fld9xsU5FuQycCqXg",
+                    "name": "fuel_system"
+                },
+                {
+                    "type": "checkbox",
+                    "options": {
+                        "icon": "check",
+                        "color": "greenBright"
+                    },
+                    "id": "fldC8ZWOaC8Lbgya7",
+                    "name": "is_common_in_local_market"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldVAf5ETI707CAUE",
+                    "name": "years_active_in_thailand "
+                },
+                {
+                    "type": "multilineText",
+                    "id": "fldAYGuM6BqWK0jog",
+                    "name": "notes"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblyxE4AkZ6vaQg0f",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldz8T53LHGDBaJjg"
+                    },
+                    "id": "fldI7UE2xkWJVy1hK",
+                    "name": "Products"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblu4Q5KQfh4lNPNp",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fld4Rwr3Wc0QueP3C"
+                    },
+                    "id": "fldDcFeiGBZbTwgxi",
+                    "name": "Repair Jobs"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwqZfN7trwaNpEmJ",
+                    "name": "Master",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblHi4m6KaFxvLlMT",
+            "name": "Customers",
+            "primaryFieldId": "fldwzt43qmizYXWYb",
+            "fields": [
+                {
+                    "type": "singleLineText",
+                    "id": "fldwzt43qmizYXWYb",
+                    "name": "Name"
+                },
+                {
+                    "type": "phoneNumber",
+                    "id": "fld0GszUMw7CwDDdu",
+                    "name": "Phone"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tbl6LpfplyCy1ADXl",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldyKw0kfjY9vRrzg"
+                    },
+                    "id": "fldOvH5kcbWrT8pML",
+                    "name": "Sales"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblu4Q5KQfh4lNPNp",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldcYfKqN4ssSD6mr"
+                    },
+                    "id": "fld3WakB5OoiEfxSH",
+                    "name": "Repair Jobs"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblt1gmhFWrL9VyEQ",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fldqm5d5Y8PfvbpQm"
+                    },
+                    "id": "fld0FR6rELEba1p4E",
+                    "name": "Customer Credit"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fld0FR6rELEba1p4E",
+                        "fieldIdInLinkedTable": "fldg1LRQem9IorrvZ",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldRuWoRxJ4R8mE3b",
+                    "name": "credit_balance"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwpfOfRaVXOC4QuM",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwkxGNE39se897sP",
+                    "name": "Credit Customers-Paid",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwKH3c6xHOOqYJRl",
+                    "name": "Credit Customers-Not Paid",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblt1gmhFWrL9VyEQ",
+            "name": "Customer Credit",
+            "primaryFieldId": "fldkWPPi2odq1YOb3",
+            "fields": [
+                {
+                    "type": "autoNumber",
+                    "id": "fldkWPPi2odq1YOb3",
+                    "name": "credit_id"
+                },
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "fldeXNyND6yocPW4q",
+                    "name": "date"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblHi4m6KaFxvLlMT",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fld0FR6rELEba1p4E"
+                    },
+                    "id": "fldqm5d5Y8PfvbpQm",
+                    "name": "customer"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selvHUSnDwQpCg471",
+                                "name": "\u0e0b\u0e37\u0e49\u0e2d\u0e40\u0e04\u0e23\u0e14\u0e34\u0e15 (Credit Sale)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selmwW6LrpRHakpKs",
+                                "name": "\u0e0a\u0e33\u0e23\u0e30\u0e2b\u0e19\u0e35\u0e49 (Payment)",
+                                "color": "cyanLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldIBOftDRtgh0Mtx",
+                    "name": "type"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldkqb4d10SGVSCGw",
+                    "name": "amount"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tbl6LpfplyCy1ADXl",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fldmydxJIW2tWEptu"
+                    },
+                    "id": "flds5gynDecBOjhwl",
+                    "name": "sale"
+                },
+                {
+                    "type": "richText",
+                    "id": "fld1GETou5dDXVy7x",
+                    "name": "note"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "IF({fldIBOftDRtgh0Mtx} = \"\u0e0b\u0e37\u0e49\u0e2d\u0e40\u0e04\u0e23\u0e14\u0e34\u0e15 (Credit Sale)\", {fldkqb4d10SGVSCGw}, -{fldkqb4d10SGVSCGw})",
+                        "referencedFieldIds": [
+                            "fldIBOftDRtgh0Mtx",
+                            "fldkqb4d10SGVSCGw"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldg1LRQem9IorrvZ",
+                    "name": "signed_amount"
+                },
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "fldAJ2nt6B9ifLrsa",
+                    "name": "payment_due_date"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldUqX4UXHvLG8Jrz",
+                    "name": "payment_note"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwMUK3mMOxnLlpiK",
+                    "name": "Master",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tbluPwZ6rfFL0lcyc",
+            "name": "Expenses",
+            "primaryFieldId": "fldCMPAIiApkI9yRR",
+            "fields": [
+                {
+                    "type": "autoNumber",
+                    "id": "fldCMPAIiApkI9yRR",
+                    "name": "expense_id"
+                },
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "fldwWCotXptfNQPdE",
+                    "name": "expense_date"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selVGp8qmvlR5xKhH",
+                                "name": "\u0e04\u0e48\u0e32\u0e44\u0e1f (Electricity)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selmYJphdUaHLGw2E",
+                                "name": "\u0e04\u0e48\u0e32\u0e19\u0e49\u0e33 (Water)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "sel4Ts5lfk6T0UPf9",
+                                "name": "\u0e04\u0e48\u0e32\u0e19\u0e49\u0e33\u0e21\u0e31\u0e19\u0e23\u0e16 (Fuel)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "sel7VY8Av134UacGF",
+                                "name": "\u0e04\u0e48\u0e32\u0e2d\u0e34\u0e19\u0e40\u0e17\u0e2d\u0e23\u0e4c\u0e40\u0e19\u0e47\u0e15 (Internet)",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selqUBFRA5qX6OxZ0",
+                                "name": "\u0e04\u0e48\u0e32\u0e0b\u0e2d\u0e1f\u0e15\u0e4c\u0e41\u0e27\u0e23\u0e4c (Software i.e. Airtable, Fillout)",
+                                "color": "yellowLight2"
+                            },
+                            {
+                                "id": "selAdq39jkCLi4kg8",
+                                "name": "\u0e04\u0e48\u0e32 AI / Claude",
+                                "color": "blueLight1"
+                            },
+                            {
+                                "id": "selRqBKSFw9k4iJ4E",
+                                "name": "\u0e04\u0e48\u0e32\u0e42\u0e17\u0e23\u0e28\u0e31\u0e1e\u0e17\u0e4c (Cell phone plans Mai, Boot, Pinit)",
+                                "color": "grayLight2"
+                            },
+                            {
+                                "id": "selsiBeTRpnXh8IPz",
+                                "name": "\u0e04\u0e48\u0e32\u0e08\u0e49\u0e32\u0e07\u0e0a\u0e48\u0e32\u0e07 (Part-time labor)",
+                                "color": "orangeLight2"
+                            },
+                            {
+                                "id": "selAZBJKpFA7OBzG8",
+                                "name": "\u0e04\u0e48\u0e32\u0e02\u0e19\u0e2a\u0e48\u0e07 (Shipping / inbound freight)",
+                                "color": "redLight2"
+                            },
+                            {
+                                "id": "sellfG7xvrL8eh838",
+                                "name": "\u0e04\u0e48\u0e32\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e21\u0e37\u0e2d (Tools & maintenance)",
+                                "color": "pinkLight2"
+                            },
+                            {
+                                "id": "selxsdEbAMh3FEEQD",
+                                "name": "\u0e40\u0e07\u0e34\u0e19\u0e40\u0e14\u0e37\u0e2d\u0e19 Mai",
+                                "color": "cyanLight1"
+                            },
+                            {
+                                "id": "sel2sVAnXSbU2alFI",
+                                "name": "\u0e40\u0e07\u0e34\u0e19\u0e40\u0e14\u0e37\u0e2d\u0e19 Boot",
+                                "color": "tealLight1"
+                            },
+                            {
+                                "id": "selDhlObZoLk1epHJ",
+                                "name": "\u0e40\u0e07\u0e34\u0e19\u0e40\u0e14\u0e37\u0e2d\u0e19/\u0e40\u0e1a\u0e34\u0e01 Pinit",
+                                "color": "greenLight1"
+                            },
+                            {
+                                "id": "seljNOhJux4rpJLKy",
+                                "name": "\u0e04\u0e48\u0e32\u0e2d\u0e32\u0e2b\u0e32\u0e23/\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e14\u0e37\u0e48\u0e21 (Food & drinking water - shop)",
+                                "color": "yellowLight1"
+                            },
+                            {
+                                "id": "sel4NQL1xXUWjBx3X",
+                                "name": "\u0e14\u0e2d\u0e01\u0e40\u0e1a\u0e35\u0e49\u0e22\u0e40\u0e1a\u0e34\u0e01\u0e40\u0e01\u0e34\u0e19\u0e1a\u0e31\u0e0d\u0e0a\u0e35 (SCB overdraft interest)",
+                                "color": "orangeLight1"
+                            },
+                            {
+                                "id": "selkhjRHvWaGlgVv6",
+                                "name": "\u0e04\u0e48\u0e32\u0e22\u0e37\u0e48\u0e19\u0e20\u0e32\u0e29\u0e35 (Tax filing)",
+                                "color": "redLight1"
+                            },
+                            {
+                                "id": "selM2t1ThPcmHQXpr",
+                                "name": "Netflix",
+                                "color": "pinkLight1"
+                            },
+                            {
+                                "id": "selWDYcP3Q4EIeptx",
+                                "name": "\u0e04\u0e48\u0e32\u0e1f\u0e32\u0e23\u0e4c\u0e21 (Farm subsidy - labor, transport, supplies)",
+                                "color": "purpleLight1"
+                            },
+                            {
+                                "id": "selMk60y8XupidZBT",
+                                "name": "\u0e2d\u0e37\u0e48\u0e19\u0e46 (Other)",
+                                "color": "purpleLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldjRr2oaT2kbvZdO",
+                    "name": "category"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldmiq8RZIXy9Grm9",
+                    "name": "amount"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selP6eQ29CbspHBoo",
+                                "name": "\u0e40\u0e07\u0e34\u0e19\u0e2a\u0e14 (Cash)",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selz2NKF7PTlAHOWR",
+                                "name": "\u0e42\u0e2d\u0e19 (Transfer)",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selJlU2SCW7nIU7Fb",
+                                "name": "\u0e40\u0e04\u0e23\u0e14\u0e34\u0e15 (Credit)",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selssCLkqq2GhcGZs",
+                                "name": "\u0e2b\u0e25\u0e32\u0e22\u0e0a\u0e48\u0e2d\u0e07\u0e17\u0e32\u0e07 (Mixed",
+                                "color": "greenLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldWPsCx6zHVarXZ8",
+                    "name": "payment_method"
+                },
+                {
+                    "type": "singleLineText",
+                    "id": "fldX07PonBA684i3A",
+                    "name": "description"
+                },
+                {
+                    "type": "richText",
+                    "id": "fldRf8kx1zJnfMSP3",
+                    "name": "note"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwK0hNUbKIYQW9i4",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viw8EZHzp2pda1cnC",
+                    "name": "Recent Expenses",
+                    "type": "grid"
+                },
+                {
+                    "id": "viw9j26iMONkZWaqw",
+                    "name": "By Category",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwqQv3Z5xsrnJMkg",
+                    "name": "Past 30 Days",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwpT8PFVhoIm8VTj",
+                    "name": "This Calendar Month",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblkpP9hD1LGbpUzG",
+            "name": "Daily Cash Reconciliation",
+            "primaryFieldId": "fldafPbSHebkkVhH3",
+            "fields": [
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "fldafPbSHebkkVhH3",
+                    "name": "date"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldit7HVnutZn4WI6",
+                    "name": "starting_balance"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblI8YcOSqav1Spse",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": false,
+                        "inverseLinkFieldId": "fld2WFUFIYDVu01Yv"
+                    },
+                    "id": "fldEIEMkE3uzdvdcp",
+                    "name": "person_draws"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldEIEMkE3uzdvdcp",
+                        "fieldIdInLinkedTable": "fld8jpU0aNZcjMOyr",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldOnT4OK1RDxi5qy",
+                    "name": "total_draws"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldEIEMkE3uzdvdcp",
+                        "fieldIdInLinkedTable": "fldoSRmm9H9bvvybV",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldjxzaQa0zEm4M9E",
+                    "name": "total_food"
+                },
+                {
+                    "type": "rollup",
+                    "options": {
+                        "isValid": true,
+                        "recordLinkFieldId": "fldEIEMkE3uzdvdcp",
+                        "fieldIdInLinkedTable": "fldMncPV7UJiqOKlb",
+                        "referencedFieldIds": [],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldmKV7VJCD4Uoskp",
+                    "name": "total_other_personal"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldFNq2HMtj26h2cL",
+                    "name": "total_cash_sales"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fld4VPEdapCNyGpUY",
+                    "name": "total_cash_refunds"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldVFqxOfNtHua15k",
+                    "name": "total_cod_purchases"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldNLzXsAmf3j1TtC",
+                    "name": "total_delivery_fees"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldOcIFlvOiTUsYfJ",
+                    "name": "other_cash_in"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldLkiAlRrYbeQd9M",
+                    "name": "other_cash_out"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldFNq2HMtj26h2cL} + {fldOcIFlvOiTUsYfJ}",
+                        "referencedFieldIds": [
+                            "fldFNq2HMtj26h2cL",
+                            "fldOcIFlvOiTUsYfJ"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fld8iJLkErEi2UXGx",
+                    "name": "total_cash_in"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldOnT4OK1RDxi5qy} + {fldjxzaQa0zEm4M9E} + {fldmKV7VJCD4Uoskp} + {fld4VPEdapCNyGpUY} + {fldVFqxOfNtHua15k} + {fldNLzXsAmf3j1TtC} + {fldLkiAlRrYbeQd9M}",
+                        "referencedFieldIds": [
+                            "fldOnT4OK1RDxi5qy",
+                            "fldjxzaQa0zEm4M9E",
+                            "fldmKV7VJCD4Uoskp",
+                            "fld4VPEdapCNyGpUY",
+                            "fldVFqxOfNtHua15k",
+                            "fldNLzXsAmf3j1TtC",
+                            "fldLkiAlRrYbeQd9M"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 2,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldwGfo8E9KWcbcX7",
+                    "name": "total_cash_out"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldit7HVnutZn4WI6} + {fld8iJLkErEi2UXGx} - {fldwGfo8E9KWcbcX7}",
+                        "referencedFieldIds": [
+                            "fldit7HVnutZn4WI6",
+                            "fld8iJLkErEi2UXGx",
+                            "fldwGfo8E9KWcbcX7"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldB8t9FCgvLAgyIy",
+                    "name": "expected_balance"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldcA9MklJs0BKct6",
+                    "name": "actual_count"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fldcA9MklJs0BKct6} - {fldB8t9FCgvLAgyIy}",
+                        "referencedFieldIds": [
+                            "fldcA9MklJs0BKct6",
+                            "fldB8t9FCgvLAgyIy"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fld2JYC8q444b6NmG",
+                    "name": "variance"
+                },
+                {
+                    "type": "richText",
+                    "id": "fldmnjd9f7xMO7Hve",
+                    "name": "notes"
+                },
+                {
+                    "type": "richText",
+                    "id": "fldw8q9lRQTK7xtXo",
+                    "name": "section_c_detail"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selmZD9z6wyQElEE4",
+                                "name": "high",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selUxUQsyg1x8trhX",
+                                "name": "medium",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selzpdvHm44IemLb3",
+                                "name": "low",
+                                "color": "tealLight2"
+                            }
+                        ]
+                    },
+                    "id": "fld2a8pRnZ9QSTOLk",
+                    "name": "extraction_confidence"
+                },
+                {
+                    "type": "multipleAttachments",
+                    "options": {
+                        "isReversed": false
+                    },
+                    "id": "fldgCc3RFIRE9DcLY",
+                    "name": "ledger_photo"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "selUn4ACS5TqiCCUD",
+                                "name": "app",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "selwBwO9oHhMZPEUR",
+                                "name": "manual",
+                                "color": "cyanLight2"
+                            }
+                        ]
+                    },
+                    "id": "fld2o9rSjJevhE0gt",
+                    "name": "entered_via"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwjelAtBObIZkeq6",
+                    "name": "Master",
+                    "type": "grid"
+                }
+            ]
+        },
+        {
+            "id": "tblI8YcOSqav1Spse",
+            "name": "Daily Person Draws",
+            "primaryFieldId": "fld9Xwul1yF6p3Q7r",
+            "fields": [
+                {
+                    "type": "date",
+                    "options": {
+                        "dateFormat": {
+                            "name": "european",
+                            "format": "D/M/YYYY"
+                        }
+                    },
+                    "id": "fld9Xwul1yF6p3Q7r",
+                    "name": "date"
+                },
+                {
+                    "type": "singleSelect",
+                    "options": {
+                        "choices": [
+                            {
+                                "id": "sellc7BNUymkdLmHl",
+                                "name": "Mai",
+                                "color": "blueLight2"
+                            },
+                            {
+                                "id": "sel3kBHvjg39X9kQZ",
+                                "name": "Boot",
+                                "color": "cyanLight2"
+                            },
+                            {
+                                "id": "selWyP3avdhSDDFb1",
+                                "name": "Pinit",
+                                "color": "tealLight2"
+                            },
+                            {
+                                "id": "selRIosCv0it8dO68",
+                                "name": "Kai",
+                                "color": "greenLight2"
+                            },
+                            {
+                                "id": "selJ6uPH55JyaAl8k",
+                                "name": "Aed",
+                                "color": "yellowLight2"
+                            }
+                        ]
+                    },
+                    "id": "fldzD9Z3K8IudfUJ1",
+                    "name": "person"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fld8jpU0aNZcjMOyr",
+                    "name": "salary"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldoSRmm9H9bvvybV",
+                    "name": "food"
+                },
+                {
+                    "type": "currency",
+                    "options": {
+                        "precision": 0,
+                        "symbol": "\u0e3f"
+                    },
+                    "id": "fldMncPV7UJiqOKlb",
+                    "name": "other"
+                },
+                {
+                    "type": "formula",
+                    "options": {
+                        "isValid": true,
+                        "formula": "{fld8jpU0aNZcjMOyr} + {fldoSRmm9H9bvvybV} + {fldMncPV7UJiqOKlb}",
+                        "referencedFieldIds": [
+                            "fld8jpU0aNZcjMOyr",
+                            "fldoSRmm9H9bvvybV",
+                            "fldMncPV7UJiqOKlb"
+                        ],
+                        "result": {
+                            "type": "currency",
+                            "options": {
+                                "precision": 0,
+                                "symbol": "\u0e3f"
+                            }
+                        }
+                    },
+                    "id": "fldo4NiNVNPfcoUEX",
+                    "name": "total"
+                },
+                {
+                    "type": "multipleRecordLinks",
+                    "options": {
+                        "linkedTableId": "tblkpP9hD1LGbpUzG",
+                        "isReversed": false,
+                        "prefersSingleRecordLink": true,
+                        "inverseLinkFieldId": "fldEIEMkE3uzdvdcp"
+                    },
+                    "id": "fld2WFUFIYDVu01Yv",
+                    "name": "reconciliation"
+                }
+            ],
+            "views": [
+                {
+                    "id": "viwP86cei9ORf4iSQ",
+                    "name": "Master",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwzGGhIx4VIAbG1H",
+                    "name": "By Date",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwmuEFX3OKFK8To8",
+                    "name": "By Person",
+                    "type": "grid"
+                },
+                {
+                    "id": "viwOuJlFJqmKhE3HJ",
+                    "name": "This Month",
+                    "type": "grid"
+                }
+            ]
+        }
+    ]
 }
