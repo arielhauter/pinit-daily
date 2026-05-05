@@ -29,9 +29,13 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            alert("tap works");
-            if (p.stock > 0 && onAction) {
-              onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
+            console.log("onAction is:", typeof onAction);
+            if (onAction) {
+              const msg = `ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`;
+              console.log("Sending:", msg);
+              onAction(msg);
+            } else {
+              alert("ERROR: onAction is undefined");
             }
           }}
           className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
