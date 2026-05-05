@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "ai/react";
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ContextButtons } from "@/components/chat/context-buttons";
 import { ToolResultCard } from "@/components/chat/tool-result-card";
@@ -22,13 +22,12 @@ export default function ChatPage() {
     }
   }, [isLoading, append]);
 
-  const handleCardAction = useCallback((message: string) => {
-    if (isLoading) {
-      pendingAction.current = message;
-    } else {
-      append({ role: "user", content: message });
-    }
-  }, [isLoading, append]);
+  const handleCardAction = (message: string) => {
+    alert('About to send: ' + message);
+    setTimeout(() => {
+      append({ role: 'user', content: message });
+    }, 100);
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
