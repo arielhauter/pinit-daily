@@ -386,26 +386,51 @@ export const chatTools = {
       total_collected: z.number().optional().describe("ยอดเก็บจริง (ถ้าต่างจากยอดรวม)"),
       note: z.string().optional().describe("หมายเหตุ"),
     }),
-    execute: async ({ transaction_type, items, payment_method, customer_record_id, discount, total_collected, note }) => {
+    execute: async ({ transaction_type, items, payment_method, customer_name, customer_record_id, discount, total_collected, note }) => {
       try {
         const normalizedPayment = normalizeSelect(payment_method, SALE_PAYMENT_MAP);
         const normalizedType = cleanSelect(transaction_type);
+
+        // Resolve customer: use provided record ID, or search/create by name
+        let customerRecordId: string | null = customer_record_id || null;
+        if (!customerRecordId && customer_name) {
+          const s = sanitizeForFormula(customer_name);
+          const customers = await selectRecords("Customers", {
+            filterByFormula: `SEARCH("${s}", {Name})`,
+            fields: ["Name"],
+            maxRecords: 1,
+          });
+          if (customers.length > 0) {
+            customerRecordId = customers[0].id;
+          } else {
+            const newCustomer = await createRecord("Customers", {
+              Name: customer_name,
+            });
+            customerRecordId = newCustomer.id;
+          }
+        }
+
+        // Compute total BEFORE creating the Sale so Automation 2 reads it immediately
+        const subtotal = items.reduce(
+          (sum, i) => sum + i.quantity * i.unit_price,
+          0
+        );
+        const computedTotal = subtotal - (discount || 0);
+        const collected = total_collected || computedTotal;
 
         const saleFields: Record<string, unknown> = {
           sale_date: new Date().toISOString(),
           transaction_type: normalizedType,
           payment_method: normalizedPayment,
+          total_collected: collected,
           created_by: "Mai",
         };
 
-        if (customer_record_id) {
-          saleFields.customer = [customer_record_id];
+        if (customerRecordId) {
+          saleFields.customer = [customerRecordId];
         }
         if (discount && discount > 0) {
           saleFields.discount_baht = discount;
-        }
-        if (total_collected !== undefined) {
-          saleFields.total_collected = total_collected;
         }
         if (note) {
           saleFields.note = note;
@@ -430,17 +455,6 @@ export const chatTools = {
 
         await createRecords("Sale Line Items", lineItemRecords);
 
-        const subtotal = items.reduce(
-          (sum, i) => sum + i.quantity * i.unit_price,
-          0
-        );
-        const computedTotal = subtotal - (discount || 0);
-        const collected = total_collected || computedTotal;
-
-        await updateRecord(TABLES.SALES, saleRecord.id, {
-          total_collected: collected,
-        });
-
         return {
           success: true,
           saleId: saleRecord.id,
@@ -454,7 +468,7 @@ export const chatTools = {
           total: subtotal,
           discount: discount || 0,
           paymentMethod: normalizedPayment,
-          customer: customer_record_id ? "linked" : null,
+          customer: customerRecordId ? "linked" : null,
         };
       } catch (err) {
         return {
