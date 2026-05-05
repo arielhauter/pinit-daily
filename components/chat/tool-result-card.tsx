@@ -29,8 +29,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            alert('TAP TEST');
-            if (onAction) {
+            if (p.stock > 0 && onAction) {
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
           }}
@@ -221,7 +220,7 @@ function SaleConfirmationCard({ data, onAction }: { data: {
         <button
           onPointerDown={(e) => {
             e.stopPropagation();
-            onAction("ต้องการบันทึกการขาย");
+            setTimeout(() => { onAction!("ต้องการบันทึกการขาย"); }, 0);
           }}
           className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full relative z-10 cursor-pointer"
         >

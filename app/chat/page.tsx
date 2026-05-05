@@ -82,7 +82,9 @@ export default function ChatPage() {
                         }
                         onAction={(message: string) => {
                           console.log('onAction fired:', message);
-                          append({ role: 'user', content: message });
+                          setTimeout(() => {
+                            append({ role: 'user', content: message });
+                          }, 0);
                         }}
                       />
                     ))}
