@@ -6,10 +6,12 @@ import { chatTools } from "@/lib/chat-tools";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages, oracleMode } = await req.json();
+
+  const model = oracleMode ? "claude-opus-4-6" : "claude-sonnet-4-6";
 
   const result = await streamText({
-    model: anthropic("claude-sonnet-4-6"),
+    model: anthropic(model),
     system: SYSTEM_PROMPT,
     messages,
     tools: chatTools,

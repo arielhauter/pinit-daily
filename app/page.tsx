@@ -188,6 +188,14 @@ export default function UploadPage() {
         </button>
       )}
 
+      {/* AI Chat — primary daily tool */}
+      <a
+        href="/chat"
+        className="flex items-center justify-center gap-2 bg-sky-600 text-white rounded-xl px-6 py-3 text-lg font-medium active:bg-sky-700 transition-colors"
+      >
+        🤖 น้องพินิจ — AI Chat
+      </a>
+
       <div className="text-center space-y-2">
         <p className="text-xs text-slate-500">── ดูสรุปวันก่อนหน้า ──</p>
         <button className="text-sm text-slate-400 hover:text-white transition-colors">
@@ -195,12 +203,12 @@ export default function UploadPage() {
         </button>
       </div>
 
-      <div className="text-center pt-2">
+      <div className="flex justify-center gap-3 pt-2">
         <a
           href="/inventory"
           className="inline-block bg-surface rounded-xl px-6 py-3 border border-slate-700 hover:border-slate-500 transition-colors"
         >
-          <div className="text-lg">📦</div>
+          <div className="text-lg text-center">📦</div>
           <div className="text-sm text-white font-semibold">นับสต็อก</div>
           <div className="text-xs text-slate-400">Inventory Count</div>
         </a>

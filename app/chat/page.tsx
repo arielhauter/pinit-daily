@@ -10,16 +10,20 @@ import { QrScanner } from "@/components/chat/qr-scanner";
 export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [oracleMode, setOracleMode] = useState(false);
 
-  const { messages, input, handleInputChange, handleSubmit, append, isLoading } =
-    useChat({ api: "/api/chat" });
+  const { messages, input, handleInputChange, handleSubmit, append, isLoading, setMessages } =
+    useChat({
+      api: "/api/chat",
+      body: { oracleMode },
+    });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
-      // QR scanner trigger from stock count card
       const scanTrigger = target.closest('[data-scan-trigger]');
       if (scanTrigger) {
         e.preventDefault();
@@ -28,7 +32,6 @@ export default function ChatPage() {
         return;
       }
 
-      // Label printing — open URL in new tab
       const label = target.closest('[data-label-url]') as HTMLElement | null;
       if (label) {
         e.preventDefault();
@@ -40,7 +43,6 @@ export default function ChatPage() {
         return;
       }
 
-      // Card actions
       const card = target.closest('[data-card-action]');
       if (card) {
         const message = card.getAttribute('data-card-action');
@@ -62,6 +64,12 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading]);
+
   const handleContextButton = (prompt: string) => {
     if (prompt === "__CLOSE_SHOP__") {
       router.push("/");
@@ -70,17 +78,48 @@ export default function ChatPage() {
     append({ role: "user", content: prompt });
   };
 
+  const handleClearChat = () => {
+    setMessages([]);
+  };
+
   return (
     <div className="flex flex-col h-[100dvh] max-w-md mx-auto bg-slate-900">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className={`flex items-center justify-between px-4 py-3 border-b ${
+        oracleMode ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700'
+      }`}>
         <h1 className="text-lg font-medium text-white">น้องพินิจ 🤖</h1>
-        <button
-          onClick={() => router.push("/")}
-          className="text-sm text-slate-400 hover:text-white"
-        >
-          กลับ
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setOracleMode(!oracleMode)}
+            className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
+              oracleMode
+                ? 'bg-purple-600 text-white ring-2 ring-purple-400'
+                : 'bg-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            🧠 {oracleMode ? 'Oracle ON' : 'Oracle'}
+          </button>
+          <button
+            onClick={handleClearChat}
+            className="text-sm text-slate-400 hover:text-white"
+            title="เริ่มแชทใหม่"
+          >
+            🗑
+          </button>
+          <button
+            onClick={() => router.push('/inventory')}
+            className="text-sm text-slate-400 hover:text-white"
+          >
+            📦
+          </button>
+          <button
+            onClick={() => router.push("/")}
+            className="text-sm text-slate-400 hover:text-white"
+          >
+            🌙
+          </button>
+        </div>
       </div>
 
       {/* Context Buttons */}
@@ -167,6 +206,7 @@ export default function ChatPage() {
           📷
         </button>
         <input
+          ref={inputRef}
           value={input}
           onChange={handleInputChange}
           placeholder="พิมพ์ข้อความ..."
@@ -181,6 +221,11 @@ export default function ChatPage() {
           ➤
         </button>
       </form>
+
+      {/* Version */}
+      <div className="text-xs text-slate-600 text-center py-1">
+        Pinit AI v1.0 — Phase 5
+      </div>
     </div>
   );
 }

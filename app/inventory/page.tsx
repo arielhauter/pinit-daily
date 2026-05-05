@@ -287,13 +287,19 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Back to home */}
-      <div className="text-center">
+      {/* Navigation */}
+      <div className="flex justify-center gap-4">
+        <a
+          href="/chat"
+          className="text-sm text-sky-400 hover:text-white transition-colors"
+        >
+          🤖 แชท
+        </a>
         <a
           href="/"
           className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
         >
-          ◄ กลับหน้าแรก (Back to home)
+          ◄ กลับหน้าแรก
         </a>
       </div>
     </div>

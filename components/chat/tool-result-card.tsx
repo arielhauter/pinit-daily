@@ -584,6 +584,15 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
 
   const data = result as Record<string, unknown>;
 
+  if (data && typeof data === 'object' && 'error' in data && ('success' in data ? data.success === false : true)) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ เกิดข้อผิดพลาด</div>
+        <div className="text-sm text-slate-400 mt-1">{String(data.error)}</div>
+      </div>
+    );
+  }
+
   switch (toolName) {
     case "lookup_product":
       return <ProductCards data={data as Parameters<typeof ProductCards>[0]["data"]} />;

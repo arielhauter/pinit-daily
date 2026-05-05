@@ -182,52 +182,56 @@ export const chatTools = {
       query: z.string().describe("ชื่อสินค้า, SKU, หรือคำค้น"),
     }),
     execute: async ({ query }) => {
-      const words = query.split(/\s+/).filter((w) => w.length > 0);
-      if (words.length === 0) return { found: 0, products: [] };
+      try {
+        const words = query.split(/\s+/).filter((w) => w.length > 0);
+        if (words.length === 0) return { found: 0, products: [] };
 
-      const hasLatin = /[a-zA-Z]/;
-      const wordClauses = words.map((word) => {
-        const s = sanitizeForFormula(word);
-        if (hasLatin.test(word)) {
-          const lower = s.toLowerCase();
-          return `OR(SEARCH("${lower}", LOWER({display_name})), SEARCH("${lower}", LOWER({original_name})), SEARCH("${s}", {sku}))`;
-        }
-        return `OR(SEARCH("${s}", {display_name}), SEARCH("${s}", {original_name}), SEARCH("${s}", {sku}))`;
-      });
-      const formula =
-        wordClauses.length === 1
-          ? wordClauses[0]
-          : `AND(${wordClauses.join(", ")})`;
+        const hasLatin = /[a-zA-Z]/;
+        const wordClauses = words.map((word) => {
+          const s = sanitizeForFormula(word);
+          if (hasLatin.test(word)) {
+            const lower = s.toLowerCase();
+            return `OR(SEARCH("${lower}", LOWER({display_name})), SEARCH("${lower}", LOWER({original_name})), SEARCH("${s}", {sku}))`;
+          }
+          return `OR(SEARCH("${s}", {display_name}), SEARCH("${s}", {original_name}), SEARCH("${s}", {sku}))`;
+        });
+        const formula =
+          wordClauses.length === 1
+            ? wordClauses[0]
+            : `AND(${wordClauses.join(", ")})`;
 
-      const records = await selectRecords(TABLES.PRODUCTS, {
-        filterByFormula: formula,
-        fields: [
-          "sku",
-          "display_name",
-          "current_stock",
-          "last_known_cost_baht",
-          "last_known_sell_price_baht",
-          "repair_price_total",
-          "category",
-          "product_photo",
-        ],
-        sort: [{ field: "display_name", direction: "asc" }],
-        maxRecords: 10,
-      });
+        const records = await selectRecords(TABLES.PRODUCTS, {
+          filterByFormula: formula,
+          fields: [
+            "sku",
+            "display_name",
+            "current_stock",
+            "last_known_cost_baht",
+            "last_known_sell_price_baht",
+            "repair_price_total",
+            "category",
+            "product_photo",
+          ],
+          sort: [{ field: "display_name", direction: "asc" }],
+          maxRecords: 10,
+        });
 
-      const products = records.map((r) => ({
-        id: r.id,
-        sku: (r.fields.sku as string) || "",
-        name: (r.fields.display_name as string) || "",
-        stock: (r.fields.current_stock as number) || 0,
-        cost: (r.fields.last_known_cost_baht as number) || 0,
-        sellPrice: (r.fields.last_known_sell_price_baht as number) || 0,
-        repairPrice: (r.fields.repair_price_total as number) || null,
-        category: (r.fields.category as string) || "",
-        photoUrl: extractPhotoUrl(r.fields.product_photo),
-      }));
+        const products = records.map((r) => ({
+          id: r.id,
+          sku: (r.fields.sku as string) || "",
+          name: (r.fields.display_name as string) || "",
+          stock: (r.fields.current_stock as number) || 0,
+          cost: (r.fields.last_known_cost_baht as number) || 0,
+          sellPrice: (r.fields.last_known_sell_price_baht as number) || 0,
+          repairPrice: (r.fields.repair_price_total as number) || null,
+          category: (r.fields.category as string) || "",
+          photoUrl: extractPhotoUrl(r.fields.product_photo),
+        }));
 
-      return { found: products.length, products };
+        return { found: products.length, products };
+      } catch (err) {
+        return { found: 0, products: [], error: err instanceof Error ? err.message : "ค้นหาสินค้าไม่สำเร็จ" };
+      }
     },
   }),
 
@@ -236,66 +240,70 @@ export const chatTools = {
       "ดูสรุปยอดขายวันนี้ — จำนวน, ยอดรวม, แยกตามวิธีชำระเงิน (Get today's sales summary)",
     parameters: z.object({}),
     execute: async () => {
-      const records = await selectRecords(TABLES.SALES, {
-        filterByFormula: `IS_SAME({sale_date}, TODAY(), 'day')`,
-        fields: [
-          "sale_id",
-          "sale_date",
-          "transaction_type",
-          "payment_method",
-          "total",
-          "total_collected",
-          "display_name (from product) (from line_items)",
-          "created_by",
-        ],
-      });
+      try {
+        const records = await selectRecords(TABLES.SALES, {
+          filterByFormula: `IS_SAME({sale_date}, TODAY(), 'day')`,
+          fields: [
+            "sale_id",
+            "sale_date",
+            "transaction_type",
+            "payment_method",
+            "total",
+            "total_collected",
+            "display_name (from product) (from line_items)",
+            "created_by",
+          ],
+        });
 
-      const byPaymentMethod: Record<string, { count: number; total: number }> =
-        {};
-      const byType: Record<string, { count: number; total: number }> = {};
-      let totalRevenue = 0;
+        const byPaymentMethod: Record<string, { count: number; total: number }> =
+          {};
+        const byType: Record<string, { count: number; total: number }> = {};
+        let totalRevenue = 0;
 
-      const recentSales = records.map((r) => {
-        const f = r.fields;
-        const total =
-          (f.total_collected as number) || (f.total as number) || 0;
-        const paymentMethod = (f.payment_method as string) || "ไม่ระบุ";
-        const type = (f.transaction_type as string) || "ไม่ระบุ";
+        const recentSales = records.map((r) => {
+          const f = r.fields;
+          const total =
+            (f.total_collected as number) || (f.total as number) || 0;
+          const paymentMethod = (f.payment_method as string) || "ไม่ระบุ";
+          const type = (f.transaction_type as string) || "ไม่ระบุ";
 
-        totalRevenue += total;
+          totalRevenue += total;
 
-        if (!byPaymentMethod[paymentMethod])
-          byPaymentMethod[paymentMethod] = { count: 0, total: 0 };
-        byPaymentMethod[paymentMethod].count++;
-        byPaymentMethod[paymentMethod].total += total;
+          if (!byPaymentMethod[paymentMethod])
+            byPaymentMethod[paymentMethod] = { count: 0, total: 0 };
+          byPaymentMethod[paymentMethod].count++;
+          byPaymentMethod[paymentMethod].total += total;
 
-        if (!byType[type]) byType[type] = { count: 0, total: 0 };
-        byType[type].count++;
-        byType[type].total += total;
+          if (!byType[type]) byType[type] = { count: 0, total: 0 };
+          byType[type].count++;
+          byType[type].total += total;
 
-        const items =
-          (f["display_name (from product) (from line_items)"] as string[]) ||
-          [];
+          const items =
+            (f["display_name (from product) (from line_items)"] as string[]) ||
+            [];
+
+          return {
+            saleId: (f.sale_id as number) || 0,
+            type,
+            paymentMethod,
+            total,
+            items,
+          };
+        });
+
+        const today = new Date().toISOString().split("T")[0];
 
         return {
-          saleId: (f.sale_id as number) || 0,
-          type,
-          paymentMethod,
-          total,
-          items,
+          date: today,
+          count: records.length,
+          totalRevenue,
+          byPaymentMethod,
+          byType,
+          recentSales: recentSales.slice(0, 10),
         };
-      });
-
-      const today = new Date().toISOString().split("T")[0];
-
-      return {
-        date: today,
-        count: records.length,
-        totalRevenue,
-        byPaymentMethod,
-        byType,
-        recentSales: recentSales.slice(0, 10),
-      };
+      } catch (err) {
+        return { date: "", count: 0, totalRevenue: 0, byPaymentMethod: {}, byType: {}, error: err instanceof Error ? err.message : "ดึงข้อมูลยอดขายไม่สำเร็จ" };
+      }
     },
   }),
 
@@ -309,60 +317,64 @@ export const chatTools = {
         .describe("กรองตามสถานะ เช่น กำลังซ่อม (In Progress)"),
     }),
     execute: async ({ status_filter }) => {
-      let formula: string;
-      if (status_filter) {
-        const s = sanitizeForFormula(status_filter);
-        formula = `{status} = '${s}'`;
-      } else {
-        formula = `AND({status} != 'จ่ายแล้ว (Paid)', {status} != 'ยกเลิก (Cancelled)')`;
+      try {
+        let formula: string;
+        if (status_filter) {
+          const s = sanitizeForFormula(status_filter);
+          formula = `{status} = '${s}'`;
+        } else {
+          formula = `AND({status} != 'จ่ายแล้ว (Paid)', {status} != 'ยกเลิก (Cancelled)')`;
+        }
+
+        const records = await selectRecords(TABLES.REPAIR_JOBS, {
+          filterByFormula: formula,
+          fields: [
+            "job_id",
+            "vehicle_description",
+            "license_plate",
+            "status",
+            "job_type",
+            "quoted_price",
+            "total_collected",
+            "effort_tier",
+            "labor_charge",
+            "quoted_date",
+            "parts_cost_total",
+            "parts_sell_total",
+            "notes",
+            "card_summary",
+          ],
+          sort: [{ field: "quoted_date", direction: "desc" }],
+        });
+
+        const jobs = records.map((r) => {
+          const f = r.fields;
+          const cardSummary = (f.card_summary as string) || "";
+          const customerName = cardSummary.split("|")[0]?.trim() || "";
+
+          return {
+            id: r.id,
+            jobId: (f.job_id as number) || 0,
+            customer: customerName,
+            vehicleDescription: (f.vehicle_description as string) || "",
+            licensePlate: (f.license_plate as string) || "",
+            status: (f.status as string) || "",
+            jobType: (f.job_type as string[]) || [],
+            quotedPrice: (f.quoted_price as number) || 0,
+            totalCollected: (f.total_collected as number) || 0,
+            effortTier: (f.effort_tier as string) || "",
+            laborCharge: (f.labor_charge as number) || 0,
+            quotedDate: (f.quoted_date as string) || "",
+            partsCostTotal: (f.parts_cost_total as number) || 0,
+            partsSellTotal: (f.parts_sell_total as number) || 0,
+            notes: (f.notes as string) || "",
+          };
+        });
+
+        return { count: jobs.length, jobs };
+      } catch (err) {
+        return { count: 0, jobs: [], error: err instanceof Error ? err.message : "ดึงข้อมูลงานซ่อมไม่สำเร็จ" };
       }
-
-      const records = await selectRecords(TABLES.REPAIR_JOBS, {
-        filterByFormula: formula,
-        fields: [
-          "job_id",
-          "vehicle_description",
-          "license_plate",
-          "status",
-          "job_type",
-          "quoted_price",
-          "total_collected",
-          "effort_tier",
-          "labor_charge",
-          "quoted_date",
-          "parts_cost_total",
-          "parts_sell_total",
-          "notes",
-          "card_summary",
-        ],
-        sort: [{ field: "quoted_date", direction: "desc" }],
-      });
-
-      const jobs = records.map((r) => {
-        const f = r.fields;
-        const cardSummary = (f.card_summary as string) || "";
-        const customerName = cardSummary.split("|")[0]?.trim() || "";
-
-        return {
-          id: r.id,
-          jobId: (f.job_id as number) || 0,
-          customer: customerName,
-          vehicleDescription: (f.vehicle_description as string) || "",
-          licensePlate: (f.license_plate as string) || "",
-          status: (f.status as string) || "",
-          jobType: (f.job_type as string[]) || [],
-          quotedPrice: (f.quoted_price as number) || 0,
-          totalCollected: (f.total_collected as number) || 0,
-          effortTier: (f.effort_tier as string) || "",
-          laborCharge: (f.labor_charge as number) || 0,
-          quotedDate: (f.quoted_date as string) || "",
-          partsCostTotal: (f.parts_cost_total as number) || 0,
-          partsSellTotal: (f.parts_sell_total as number) || 0,
-          notes: (f.notes as string) || "",
-        };
-      });
-
-      return { count: jobs.length, jobs };
     },
   }),
 
@@ -373,37 +385,41 @@ export const chatTools = {
       query: z.string().describe("ชื่อลูกค้า หรือเบอร์โทร"),
     }),
     execute: async ({ query }) => {
-      const s = sanitizeForFormula(query);
-      const hasLatin = /[a-zA-Z]/.test(query);
+      try {
+        const s = sanitizeForFormula(query);
+        const hasLatin = /[a-zA-Z]/.test(query);
 
-      let formula: string;
-      if (hasLatin) {
-        const lower = s.toLowerCase();
-        formula = `OR(SEARCH("${lower}", LOWER({Name})), SEARCH("${s}", {Phone}))`;
-      } else {
-        formula = `OR(SEARCH("${s}", {Name}), SEARCH("${s}", {Phone}))`;
+        let formula: string;
+        if (hasLatin) {
+          const lower = s.toLowerCase();
+          formula = `OR(SEARCH("${lower}", LOWER({Name})), SEARCH("${s}", {Phone}))`;
+        } else {
+          formula = `OR(SEARCH("${s}", {Name}), SEARCH("${s}", {Phone}))`;
+        }
+
+        const records = await selectRecords("Customers", {
+          filterByFormula: formula,
+          fields: ["Name", "Phone", "credit_balance", "Sales", "Repair Jobs"],
+          maxRecords: 10,
+        });
+
+        const customers = records.map((r) => ({
+          id: r.id,
+          name: (r.fields.Name as string) || "",
+          phone: (r.fields.Phone as string) || null,
+          creditBalance: (r.fields.credit_balance as number) || 0,
+          salesCount: Array.isArray(r.fields.Sales)
+            ? r.fields.Sales.length
+            : 0,
+          repairJobsCount: Array.isArray(r.fields["Repair Jobs"])
+            ? (r.fields["Repair Jobs"] as string[]).length
+            : 0,
+        }));
+
+        return { found: customers.length, customers };
+      } catch (err) {
+        return { found: 0, customers: [], error: err instanceof Error ? err.message : "ค้นหาลูกค้าไม่สำเร็จ" };
       }
-
-      const records = await selectRecords("Customers", {
-        filterByFormula: formula,
-        fields: ["Name", "Phone", "credit_balance", "Sales", "Repair Jobs"],
-        maxRecords: 10,
-      });
-
-      const customers = records.map((r) => ({
-        id: r.id,
-        name: (r.fields.Name as string) || "",
-        phone: (r.fields.Phone as string) || null,
-        creditBalance: (r.fields.credit_balance as number) || 0,
-        salesCount: Array.isArray(r.fields.Sales)
-          ? r.fields.Sales.length
-          : 0,
-        repairJobsCount: Array.isArray(r.fields["Repair Jobs"])
-          ? (r.fields["Repair Jobs"] as string[]).length
-          : 0,
-      }));
-
-      return { found: customers.length, customers };
     },
   }),
 
@@ -834,64 +850,68 @@ export const chatTools = {
       end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD (สำหรับ custom)"),
     }),
     execute: async ({ period, start_date, end_date }) => {
-      const { start, end } = getDateRange(period, start_date, end_date);
+      try {
+        const { start, end } = getDateRange(period, start_date, end_date);
 
-      const records = await selectRecords(TABLES.SALES, {
-        filterByFormula: buildDateFilter("sale_date", start, end),
-        fields: ["sale_id", "sale_date", "transaction_type", "payment_method", "total", "total_collected"],
-      });
+        const records = await selectRecords(TABLES.SALES, {
+          filterByFormula: buildDateFilter("sale_date", start, end),
+          fields: ["sale_id", "sale_date", "transaction_type", "payment_method", "total", "total_collected"],
+        });
 
-      const byPaymentMethod: Record<string, { count: number; total: number }> = {};
-      const byType: Record<string, { count: number; total: number }> = {};
-      const byDate: Record<string, { count: number; total: number }> = {};
-      let totalRevenue = 0;
-      let totalCollected = 0;
+        const byPaymentMethod: Record<string, { count: number; total: number }> = {};
+        const byType: Record<string, { count: number; total: number }> = {};
+        const byDate: Record<string, { count: number; total: number }> = {};
+        let totalRevenue = 0;
+        let totalCollected = 0;
 
-      records.forEach((r) => {
-        const f = r.fields;
-        const total = (f.total as number) || 0;
-        const collected = (f.total_collected as number) || total;
-        const pm = (f.payment_method as string) || "ไม่ระบุ";
-        const type = (f.transaction_type as string) || "ไม่ระบุ";
-        const date = ((f.sale_date as string) || "").split("T")[0];
+        records.forEach((r) => {
+          const f = r.fields;
+          const total = (f.total as number) || 0;
+          const collected = (f.total_collected as number) || total;
+          const pm = (f.payment_method as string) || "ไม่ระบุ";
+          const type = (f.transaction_type as string) || "ไม่ระบุ";
+          const date = ((f.sale_date as string) || "").split("T")[0];
 
-        totalRevenue += total;
-        totalCollected += collected;
+          totalRevenue += total;
+          totalCollected += collected;
 
-        if (!byPaymentMethod[pm]) byPaymentMethod[pm] = { count: 0, total: 0 };
-        byPaymentMethod[pm].count++;
-        byPaymentMethod[pm].total += collected;
+          if (!byPaymentMethod[pm]) byPaymentMethod[pm] = { count: 0, total: 0 };
+          byPaymentMethod[pm].count++;
+          byPaymentMethod[pm].total += collected;
 
-        if (!byType[type]) byType[type] = { count: 0, total: 0 };
-        byType[type].count++;
-        byType[type].total += total;
+          if (!byType[type]) byType[type] = { count: 0, total: 0 };
+          byType[type].count++;
+          byType[type].total += total;
 
-        if (date) {
-          if (!byDate[date]) byDate[date] = { count: 0, total: 0 };
-          byDate[date].count++;
-          byDate[date].total += collected;
-        }
-      });
+          if (date) {
+            if (!byDate[date]) byDate[date] = { count: 0, total: 0 };
+            byDate[date].count++;
+            byDate[date].total += collected;
+          }
+        });
 
-      const dailyBreakdown =
-        start !== end
-          ? Object.entries(byDate)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([date, info]) => ({ date, ...info }))
-          : undefined;
+        const dailyBreakdown =
+          start !== end
+            ? Object.entries(byDate)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([date, info]) => ({ date, ...info }))
+            : undefined;
 
-      return {
-        period,
-        startDate: start,
-        endDate: end,
-        count: records.length,
-        totalRevenue,
-        totalCollected,
-        averageSale: records.length > 0 ? Math.round(totalCollected / records.length) : 0,
-        byPaymentMethod,
-        byTransactionType: byType,
-        dailyBreakdown,
-      };
+        return {
+          period,
+          startDate: start,
+          endDate: end,
+          count: records.length,
+          totalRevenue,
+          totalCollected,
+          averageSale: records.length > 0 ? Math.round(totalCollected / records.length) : 0,
+          byPaymentMethod,
+          byTransactionType: byType,
+          dailyBreakdown,
+        };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "ดึงข้อมูลสรุปยอดขายไม่สำเร็จ" };
+      }
     },
   }),
 
@@ -905,74 +925,78 @@ export const chatTools = {
       supplier_name: z.string().optional().describe("กรองตามผู้จำหน่าย"),
     }),
     execute: async ({ period, start_date, end_date, supplier_name }) => {
-      const { start, end } = getDateRange(period, start_date, end_date);
+      try {
+        const { start, end } = getDateRange(period, start_date, end_date);
 
-      const allRecords = await selectRecords(TABLES.PURCHASES, {
-        filterByFormula: buildDateFilter("purchase_date", start, end),
-        fields: ["purchase_id", "purchase_date", "supplier", "total_paid", "shipping_cost", "payment_method"],
-      });
+        const allRecords = await selectRecords(TABLES.PURCHASES, {
+          filterByFormula: buildDateFilter("purchase_date", start, end),
+          fields: ["purchase_id", "purchase_date", "supplier", "total_paid", "shipping_cost", "payment_method"],
+        });
 
-      const supplierIds = new Set<string>();
-      allRecords.forEach((p) => {
-        const s = p.fields.supplier as string[];
-        if (s?.length) s.forEach((id) => supplierIds.add(id));
-      });
+        const supplierIds = new Set<string>();
+        allRecords.forEach((p) => {
+          const s = p.fields.supplier as string[];
+          if (s?.length) s.forEach((id) => supplierIds.add(id));
+        });
 
-      const supplierMap: Record<string, string> = {};
-      for (const id of Array.from(supplierIds)) {
-        try {
-          const rec = await getRecord("Suppliers", id);
-          supplierMap[id] = (rec.fields.display_name as string) || "ไม่ระบุ";
-        } catch {
-          supplierMap[id] = "ไม่ระบุ";
+        const supplierMap: Record<string, string> = {};
+        for (const id of Array.from(supplierIds)) {
+          try {
+            const rec = await getRecord("Suppliers", id);
+            supplierMap[id] = (rec.fields.display_name as string) || "ไม่ระบุ";
+          } catch {
+            supplierMap[id] = "ไม่ระบุ";
+          }
         }
+
+        const getSupplierName = (r: (typeof allRecords)[0]) => {
+          const ids = (r.fields.supplier as string[]) || [];
+          return ids.length > 0 ? supplierMap[ids[0]] || "ไม่ระบุ" : "ไม่ระบุ";
+        };
+
+        const records = supplier_name
+          ? allRecords.filter((r) =>
+              getSupplierName(r).toLowerCase().includes(supplier_name.toLowerCase())
+            )
+          : allRecords;
+
+        const bySupplier: Record<string, { count: number; total: number }> = {};
+        const byPaymentMethod: Record<string, { count: number; total: number }> = {};
+        let totalSpent = 0;
+        let totalShipping = 0;
+
+        records.forEach((r) => {
+          const f = r.fields;
+          const paid = (f.total_paid as number) || 0;
+          const shipping = (f.shipping_cost as number) || 0;
+          const pm = (f.payment_method as string) || "ไม่ระบุ";
+          const name = getSupplierName(r);
+
+          totalSpent += paid;
+          totalShipping += shipping;
+
+          if (!bySupplier[name]) bySupplier[name] = { count: 0, total: 0 };
+          bySupplier[name].count++;
+          bySupplier[name].total += paid;
+
+          if (!byPaymentMethod[pm]) byPaymentMethod[pm] = { count: 0, total: 0 };
+          byPaymentMethod[pm].count++;
+          byPaymentMethod[pm].total += paid;
+        });
+
+        return {
+          period,
+          startDate: start,
+          endDate: end,
+          count: records.length,
+          totalSpent,
+          totalShipping,
+          bySupplier,
+          byPaymentMethod,
+        };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "ดึงข้อมูลสรุปยอดซื้อไม่สำเร็จ" };
       }
-
-      const getSupplierName = (r: (typeof allRecords)[0]) => {
-        const ids = (r.fields.supplier as string[]) || [];
-        return ids.length > 0 ? supplierMap[ids[0]] || "ไม่ระบุ" : "ไม่ระบุ";
-      };
-
-      const records = supplier_name
-        ? allRecords.filter((r) =>
-            getSupplierName(r).toLowerCase().includes(supplier_name.toLowerCase())
-          )
-        : allRecords;
-
-      const bySupplier: Record<string, { count: number; total: number }> = {};
-      const byPaymentMethod: Record<string, { count: number; total: number }> = {};
-      let totalSpent = 0;
-      let totalShipping = 0;
-
-      records.forEach((r) => {
-        const f = r.fields;
-        const paid = (f.total_paid as number) || 0;
-        const shipping = (f.shipping_cost as number) || 0;
-        const pm = (f.payment_method as string) || "ไม่ระบุ";
-        const name = getSupplierName(r);
-
-        totalSpent += paid;
-        totalShipping += shipping;
-
-        if (!bySupplier[name]) bySupplier[name] = { count: 0, total: 0 };
-        bySupplier[name].count++;
-        bySupplier[name].total += paid;
-
-        if (!byPaymentMethod[pm]) byPaymentMethod[pm] = { count: 0, total: 0 };
-        byPaymentMethod[pm].count++;
-        byPaymentMethod[pm].total += paid;
-      });
-
-      return {
-        period,
-        startDate: start,
-        endDate: end,
-        count: records.length,
-        totalSpent,
-        totalShipping,
-        bySupplier,
-        byPaymentMethod,
-      };
     },
   }),
 
@@ -985,91 +1009,95 @@ export const chatTools = {
       end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD"),
     }),
     execute: async ({ period, start_date, end_date }) => {
-      const { start, end } = getDateRange(period, start_date, end_date);
+      try {
+        const { start, end } = getDateRange(period, start_date, end_date);
 
-      const sales = await selectRecords(TABLES.SALES, {
-        filterByFormula: buildDateFilter("sale_date", start, end),
-        fields: ["sale_id"],
-      });
+        const sales = await selectRecords(TABLES.SALES, {
+          filterByFormula: buildDateFilter("sale_date", start, end),
+          fields: ["sale_id"],
+        });
 
-      if (sales.length === 0) {
+        if (sales.length === 0) {
+          return {
+            period,
+            startDate: start,
+            endDate: end,
+            totalRevenue: 0,
+            totalCOGS: 0,
+            grossProfit: 0,
+            marginPercent: 0,
+            itemCount: 0,
+            isPartial: false,
+            topMarginProducts: [],
+            worstMarginProducts: [],
+          };
+        }
+
+        const saleRecordIds = new Set(sales.map((s) => s.id));
+
+        const lineItems = await selectRecords("Sale Line Items", {
+          fields: ["sale_id", "quantity", "line_total", "product_cost_lookup", "product_name_lookup"],
+          maxRecords: 500,
+        });
+
+        const matched = lineItems.filter((li) => {
+          const saleIds = (li.fields.sale_id as string[]) || [];
+          return saleIds.some((id) => saleRecordIds.has(id));
+        });
+
+        const byProduct: Record<string, { name: string; revenue: number; cost: number; qty: number }> = {};
+        let totalRevenue = 0;
+        let totalCOGS = 0;
+
+        matched.forEach((li) => {
+          const f = li.fields;
+          const qty = (f.quantity as number) || 0;
+          const lineTotal = (f.line_total as number) || 0;
+          const costArr = f.product_cost_lookup as number[];
+          const nameArr = f.product_name_lookup as string[];
+          const unitCost = Array.isArray(costArr) && costArr.length > 0 ? costArr[0] : 0;
+          const name = Array.isArray(nameArr) && nameArr.length > 0 ? nameArr[0] : "ไม่ระบุ";
+
+          const lineCost = unitCost * qty;
+          totalRevenue += lineTotal;
+          totalCOGS += lineCost;
+
+          if (!byProduct[name]) byProduct[name] = { name, revenue: 0, cost: 0, qty: 0 };
+          byProduct[name].revenue += lineTotal;
+          byProduct[name].cost += lineCost;
+          byProduct[name].qty += qty;
+        });
+
+        const grossProfit = totalRevenue - totalCOGS;
+        const marginPercent = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0;
+
+        const productMargins = Object.values(byProduct)
+          .map((p) => ({
+            name: p.name,
+            revenue: Math.round(p.revenue),
+            cost: Math.round(p.cost),
+            profit: Math.round(p.revenue - p.cost),
+            margin: p.revenue > 0 ? Math.round(((p.revenue - p.cost) / p.revenue) * 100) : 0,
+            quantity: p.qty,
+          }))
+          .sort((a, b) => b.profit - a.profit);
+
         return {
           period,
           startDate: start,
           endDate: end,
-          totalRevenue: 0,
-          totalCOGS: 0,
-          grossProfit: 0,
-          marginPercent: 0,
-          itemCount: 0,
-          isPartial: false,
-          topMarginProducts: [],
-          worstMarginProducts: [],
+          totalRevenue: Math.round(totalRevenue),
+          totalCOGS: Math.round(totalCOGS),
+          grossProfit: Math.round(grossProfit),
+          marginPercent,
+          itemCount: matched.length,
+          isPartial: lineItems.length >= 500,
+          topMarginProducts: productMargins.slice(0, 5),
+          worstMarginProducts: productMargins.slice(-5).reverse(),
         };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "วิเคราะห์กำไรไม่สำเร็จ" };
       }
-
-      const saleRecordIds = new Set(sales.map((s) => s.id));
-
-      const lineItems = await selectRecords("Sale Line Items", {
-        fields: ["sale_id", "quantity", "line_total", "product_cost_lookup", "product_name_lookup"],
-        maxRecords: 500,
-      });
-
-      const matched = lineItems.filter((li) => {
-        const saleIds = (li.fields.sale_id as string[]) || [];
-        return saleIds.some((id) => saleRecordIds.has(id));
-      });
-
-      const byProduct: Record<string, { name: string; revenue: number; cost: number; qty: number }> = {};
-      let totalRevenue = 0;
-      let totalCOGS = 0;
-
-      matched.forEach((li) => {
-        const f = li.fields;
-        const qty = (f.quantity as number) || 0;
-        const lineTotal = (f.line_total as number) || 0;
-        const costArr = f.product_cost_lookup as number[];
-        const nameArr = f.product_name_lookup as string[];
-        const unitCost = Array.isArray(costArr) && costArr.length > 0 ? costArr[0] : 0;
-        const name = Array.isArray(nameArr) && nameArr.length > 0 ? nameArr[0] : "ไม่ระบุ";
-
-        const lineCost = unitCost * qty;
-        totalRevenue += lineTotal;
-        totalCOGS += lineCost;
-
-        if (!byProduct[name]) byProduct[name] = { name, revenue: 0, cost: 0, qty: 0 };
-        byProduct[name].revenue += lineTotal;
-        byProduct[name].cost += lineCost;
-        byProduct[name].qty += qty;
-      });
-
-      const grossProfit = totalRevenue - totalCOGS;
-      const marginPercent = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0;
-
-      const productMargins = Object.values(byProduct)
-        .map((p) => ({
-          name: p.name,
-          revenue: Math.round(p.revenue),
-          cost: Math.round(p.cost),
-          profit: Math.round(p.revenue - p.cost),
-          margin: p.revenue > 0 ? Math.round(((p.revenue - p.cost) / p.revenue) * 100) : 0,
-          quantity: p.qty,
-        }))
-        .sort((a, b) => b.profit - a.profit);
-
-      return {
-        period,
-        startDate: start,
-        endDate: end,
-        totalRevenue: Math.round(totalRevenue),
-        totalCOGS: Math.round(totalCOGS),
-        grossProfit: Math.round(grossProfit),
-        marginPercent,
-        itemCount: matched.length,
-        isPartial: lineItems.length >= 500,
-        topMarginProducts: productMargins.slice(0, 5),
-        worstMarginProducts: productMargins.slice(-5).reverse(),
-      };
     },
   }),
 
@@ -1081,47 +1109,51 @@ export const chatTools = {
       limit: z.number().optional().describe("จำนวนรายการ (default: 20)"),
     }),
     execute: async ({ min_stock, limit }) => {
-      const minStk = min_stock ?? 1;
-      const maxItems = limit ?? 20;
+      try {
+        const minStk = min_stock ?? 1;
+        const maxItems = limit ?? 20;
 
-      const products = await selectRecords(TABLES.PRODUCTS, {
-        filterByFormula: `AND({current_stock} >= ${minStk}, {category} != 'ค่าแรง (Labor & Services)')`,
-        fields: [
-          "sku",
-          "display_name",
-          "current_stock",
-          "last_known_cost_baht",
-          "last_known_sell_price_baht",
-          "category",
-          "total_units_sold",
-          "stock_value_cost",
-        ],
-        sort: [{ field: "total_units_sold", direction: "asc" }],
-      });
+        const products = await selectRecords(TABLES.PRODUCTS, {
+          filterByFormula: `AND({current_stock} >= ${minStk}, {category} != 'ค่าแรง (Labor & Services)')`,
+          fields: [
+            "sku",
+            "display_name",
+            "current_stock",
+            "last_known_cost_baht",
+            "last_known_sell_price_baht",
+            "category",
+            "total_units_sold",
+            "stock_value_cost",
+          ],
+          sort: [{ field: "total_units_sold", direction: "asc" }],
+        });
 
-      const slowMovers = products
-        .filter((p) => ((p.fields.total_units_sold as number) || 0) <= 2)
-        .slice(0, maxItems);
+        const slowMovers = products
+          .filter((p) => ((p.fields.total_units_sold as number) || 0) <= 2)
+          .slice(0, maxItems);
 
-      const totalCapitalTiedUp = slowMovers.reduce(
-        (sum, p) => sum + ((p.fields.stock_value_cost as number) || 0),
-        0
-      );
+        const totalCapitalTiedUp = slowMovers.reduce(
+          (sum, p) => sum + ((p.fields.stock_value_cost as number) || 0),
+          0
+        );
 
-      return {
-        count: slowMovers.length,
-        totalCapitalTiedUp: Math.round(totalCapitalTiedUp),
-        products: slowMovers.map((p) => ({
-          sku: (p.fields.sku as string) || "",
-          name: (p.fields.display_name as string) || "",
-          stock: (p.fields.current_stock as number) || 0,
-          cost: (p.fields.last_known_cost_baht as number) || 0,
-          sellPrice: (p.fields.last_known_sell_price_baht as number) || 0,
-          unitsSold: (p.fields.total_units_sold as number) || 0,
-          capitalTiedUp: Math.round((p.fields.stock_value_cost as number) || 0),
-          category: (p.fields.category as string) || "",
-        })),
-      };
+        return {
+          count: slowMovers.length,
+          totalCapitalTiedUp: Math.round(totalCapitalTiedUp),
+          products: slowMovers.map((p) => ({
+            sku: (p.fields.sku as string) || "",
+            name: (p.fields.display_name as string) || "",
+            stock: (p.fields.current_stock as number) || 0,
+            cost: (p.fields.last_known_cost_baht as number) || 0,
+            sellPrice: (p.fields.last_known_sell_price_baht as number) || 0,
+            unitsSold: (p.fields.total_units_sold as number) || 0,
+            capitalTiedUp: Math.round((p.fields.stock_value_cost as number) || 0),
+            category: (p.fields.category as string) || "",
+          })),
+        };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "ดึงข้อมูลสินค้าค้างสต็อกไม่สำเร็จ" };
+      }
     },
   }),
 
@@ -1136,87 +1168,91 @@ export const chatTools = {
       limit: z.number().optional().describe("จำนวนอันดับ (default: 10)"),
     }),
     execute: async ({ period, start_date, end_date, metric, limit }) => {
-      const sortMetric = metric || "revenue";
-      const maxItems = limit || 10;
+      try {
+        const sortMetric = metric || "revenue";
+        const maxItems = limit || 10;
 
-      if (period === "all_time") {
-        const sortField = sortMetric === "quantity" ? "total_units_sold" : "total_revenue";
-        const products = await selectRecords(TABLES.PRODUCTS, {
-          filterByFormula: `{total_units_sold} > 0`,
-          fields: ["sku", "display_name", "total_units_sold", "total_revenue", "current_stock", "category"],
-          sort: [{ field: sortField, direction: "desc" }],
-          maxRecords: maxItems,
+        if (period === "all_time") {
+          const sortField = sortMetric === "quantity" ? "total_units_sold" : "total_revenue";
+          const products = await selectRecords(TABLES.PRODUCTS, {
+            filterByFormula: `{total_units_sold} > 0`,
+            fields: ["sku", "display_name", "total_units_sold", "total_revenue", "current_stock", "category"],
+            sort: [{ field: sortField, direction: "desc" }],
+            maxRecords: maxItems,
+          });
+
+          return {
+            period: "all_time",
+            metric: sortMetric,
+            limit: maxItems,
+            products: products.map((p, i) => ({
+              rank: i + 1,
+              name: (p.fields.display_name as string) || "",
+              sku: (p.fields.sku as string) || "",
+              totalQuantity: (p.fields.total_units_sold as number) || 0,
+              totalRevenue: (p.fields.total_revenue as number) || 0,
+              currentStock: (p.fields.current_stock as number) || 0,
+              category: (p.fields.category as string) || "",
+            })),
+          };
+        }
+
+        const { start, end } = getDateRange(period, start_date, end_date);
+
+        const sales = await selectRecords(TABLES.SALES, {
+          filterByFormula: buildDateFilter("sale_date", start, end),
+          fields: ["sale_id"],
         });
 
+        if (sales.length === 0) {
+          return { period, startDate: start, endDate: end, metric: sortMetric, limit: maxItems, products: [] };
+        }
+
+        const saleRecordIds = new Set(sales.map((s) => s.id));
+
+        const lineItems = await selectRecords("Sale Line Items", {
+          fields: ["sale_id", "quantity", "line_total", "product_name_lookup"],
+          maxRecords: 500,
+        });
+
+        const matched = lineItems.filter((li) => {
+          const saleIds = (li.fields.sale_id as string[]) || [];
+          return saleIds.some((id) => saleRecordIds.has(id));
+        });
+
+        const byProduct: Record<string, { name: string; qty: number; revenue: number }> = {};
+        matched.forEach((li) => {
+          const f = li.fields;
+          const nameArr = f.product_name_lookup as string[];
+          const name = Array.isArray(nameArr) && nameArr.length > 0 ? nameArr[0] : "ไม่ระบุ";
+          const qty = (f.quantity as number) || 0;
+          const revenue = (f.line_total as number) || 0;
+
+          if (!byProduct[name]) byProduct[name] = { name, qty: 0, revenue: 0 };
+          byProduct[name].qty += qty;
+          byProduct[name].revenue += revenue;
+        });
+
+        const sorted = Object.values(byProduct)
+          .sort((a, b) => (sortMetric === "quantity" ? b.qty - a.qty : b.revenue - a.revenue))
+          .slice(0, maxItems);
+
         return {
-          period: "all_time",
+          period,
+          startDate: start,
+          endDate: end,
           metric: sortMetric,
           limit: maxItems,
-          products: products.map((p, i) => ({
+          products: sorted.map((p, i) => ({
             rank: i + 1,
-            name: (p.fields.display_name as string) || "",
-            sku: (p.fields.sku as string) || "",
-            totalQuantity: (p.fields.total_units_sold as number) || 0,
-            totalRevenue: (p.fields.total_revenue as number) || 0,
-            currentStock: (p.fields.current_stock as number) || 0,
-            category: (p.fields.category as string) || "",
+            name: p.name,
+            totalQuantity: p.qty,
+            totalRevenue: Math.round(p.revenue),
           })),
         };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "ดึงข้อมูลสินค้าขายดีไม่สำเร็จ" };
       }
-
-      const { start, end } = getDateRange(period, start_date, end_date);
-
-      const sales = await selectRecords(TABLES.SALES, {
-        filterByFormula: buildDateFilter("sale_date", start, end),
-        fields: ["sale_id"],
-      });
-
-      if (sales.length === 0) {
-        return { period, startDate: start, endDate: end, metric: sortMetric, limit: maxItems, products: [] };
-      }
-
-      const saleRecordIds = new Set(sales.map((s) => s.id));
-
-      const lineItems = await selectRecords("Sale Line Items", {
-        fields: ["sale_id", "quantity", "line_total", "product_name_lookup"],
-        maxRecords: 500,
-      });
-
-      const matched = lineItems.filter((li) => {
-        const saleIds = (li.fields.sale_id as string[]) || [];
-        return saleIds.some((id) => saleRecordIds.has(id));
-      });
-
-      const byProduct: Record<string, { name: string; qty: number; revenue: number }> = {};
-      matched.forEach((li) => {
-        const f = li.fields;
-        const nameArr = f.product_name_lookup as string[];
-        const name = Array.isArray(nameArr) && nameArr.length > 0 ? nameArr[0] : "ไม่ระบุ";
-        const qty = (f.quantity as number) || 0;
-        const revenue = (f.line_total as number) || 0;
-
-        if (!byProduct[name]) byProduct[name] = { name, qty: 0, revenue: 0 };
-        byProduct[name].qty += qty;
-        byProduct[name].revenue += revenue;
-      });
-
-      const sorted = Object.values(byProduct)
-        .sort((a, b) => (sortMetric === "quantity" ? b.qty - a.qty : b.revenue - a.revenue))
-        .slice(0, maxItems);
-
-      return {
-        period,
-        startDate: start,
-        endDate: end,
-        metric: sortMetric,
-        limit: maxItems,
-        products: sorted.map((p, i) => ({
-          rank: i + 1,
-          name: p.name,
-          totalQuantity: p.qty,
-          totalRevenue: Math.round(p.revenue),
-        })),
-      };
     },
   }),
 
@@ -1229,94 +1265,98 @@ export const chatTools = {
       end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD"),
     }),
     execute: async ({ period, start_date, end_date }) => {
-      const { start, end } = getDateRange(period, start_date, end_date);
+      try {
+        const { start, end } = getDateRange(period, start_date, end_date);
 
-      const [sales, purchases, expenses, draws] = await Promise.all([
-        selectRecords(TABLES.SALES, {
-          filterByFormula: buildDateFilter("sale_date", start, end),
-          fields: ["total", "total_collected", "payment_method"],
-        }),
-        selectRecords(TABLES.PURCHASES, {
-          filterByFormula: buildDateFilter("purchase_date", start, end),
-          fields: ["total_paid", "shipping_cost", "payment_method"],
-        }),
-        selectRecords(TABLES.EXPENSES, {
-          filterByFormula: buildDateFilter("expense_date", start, end),
-          fields: ["amount", "category", "payment_method"],
-        }),
-        selectRecords(TABLES.DAILY_PERSON_DRAWS, {
-          filterByFormula: buildDateFilter("date", start, end),
-          fields: ["person", "salary", "food", "other", "total"],
-        }),
-      ]);
+        const [sales, purchases, expenses, draws] = await Promise.all([
+          selectRecords(TABLES.SALES, {
+            filterByFormula: buildDateFilter("sale_date", start, end),
+            fields: ["total", "total_collected", "payment_method"],
+          }),
+          selectRecords(TABLES.PURCHASES, {
+            filterByFormula: buildDateFilter("purchase_date", start, end),
+            fields: ["total_paid", "shipping_cost", "payment_method"],
+          }),
+          selectRecords(TABLES.EXPENSES, {
+            filterByFormula: buildDateFilter("expense_date", start, end),
+            fields: ["amount", "category", "payment_method"],
+          }),
+          selectRecords(TABLES.DAILY_PERSON_DRAWS, {
+            filterByFormula: buildDateFilter("date", start, end),
+            fields: ["person", "salary", "food", "other", "total"],
+          }),
+        ]);
 
-      let totalRevenue = 0;
-      let cashSales = 0;
-      let transferSales = 0;
-      let creditSales = 0;
+        let totalRevenue = 0;
+        let cashSales = 0;
+        let transferSales = 0;
+        let creditSales = 0;
 
-      sales.forEach((s) => {
-        const collected = (s.fields.total_collected as number) || (s.fields.total as number) || 0;
-        const pm = ((s.fields.payment_method as string) || "").toLowerCase();
-        totalRevenue += collected;
-        if (pm.includes("เงินสด")) cashSales += collected;
-        else if (pm.includes("โอน")) transferSales += collected;
-        else if (pm.includes("เครดิต")) creditSales += collected;
-      });
+        sales.forEach((s) => {
+          const collected = (s.fields.total_collected as number) || (s.fields.total as number) || 0;
+          const pm = ((s.fields.payment_method as string) || "").toLowerCase();
+          totalRevenue += collected;
+          if (pm.includes("เงินสด")) cashSales += collected;
+          else if (pm.includes("โอน")) transferSales += collected;
+          else if (pm.includes("เครดิต")) creditSales += collected;
+        });
 
-      const totalPurchases = purchases.reduce(
-        (sum, p) => sum + ((p.fields.total_paid as number) || 0),
-        0
-      );
+        const totalPurchases = purchases.reduce(
+          (sum, p) => sum + ((p.fields.total_paid as number) || 0),
+          0
+        );
 
-      const expenseByCategory: Record<string, number> = {};
-      let totalExpenses = 0;
-      expenses.forEach((e) => {
-        const amount = (e.fields.amount as number) || 0;
-        const cat = (e.fields.category as string) || "อื่นๆ";
-        totalExpenses += amount;
-        expenseByCategory[cat] = (expenseByCategory[cat] || 0) + amount;
-      });
+        const expenseByCategory: Record<string, number> = {};
+        let totalExpenses = 0;
+        expenses.forEach((e) => {
+          const amount = (e.fields.amount as number) || 0;
+          const cat = (e.fields.category as string) || "อื่นๆ";
+          totalExpenses += amount;
+          expenseByCategory[cat] = (expenseByCategory[cat] || 0) + amount;
+        });
 
-      const totalDraws = draws.reduce(
-        (sum, d) => sum + ((d.fields.total as number) || 0),
-        0
-      );
+        const totalDraws = draws.reduce(
+          (sum, d) => sum + ((d.fields.total as number) || 0),
+          0
+        );
 
-      const totalCashIn = totalRevenue;
-      const totalCashOut = totalPurchases + totalExpenses + totalDraws;
-      const netCashFlow = totalCashIn - totalCashOut;
+        const totalCashIn = totalRevenue;
+        const totalCashOut = totalPurchases + totalExpenses + totalDraws;
+        const netCashFlow = totalCashIn - totalCashOut;
 
-      return {
-        period,
-        startDate: start,
-        endDate: end,
-        revenue: {
-          total: Math.round(totalRevenue),
-          cash: Math.round(cashSales),
-          transfer: Math.round(transferSales),
-          credit: Math.round(creditSales),
-          salesCount: sales.length,
-        },
-        expenses: {
-          total: Math.round(totalExpenses),
-          byCategory: expenseByCategory,
-          count: expenses.length,
-        },
-        purchases: {
-          total: Math.round(totalPurchases),
-          count: purchases.length,
-        },
-        draws: {
-          total: Math.round(totalDraws),
-          count: draws.length,
-        },
-        cashFlow: {
-          totalIn: Math.round(totalCashIn),
-          totalOut: Math.round(totalCashOut),
-          net: Math.round(netCashFlow),
-        },
-      };
+        return {
+          period,
+          startDate: start,
+          endDate: end,
+          revenue: {
+            total: Math.round(totalRevenue),
+            cash: Math.round(cashSales),
+            transfer: Math.round(transferSales),
+            credit: Math.round(creditSales),
+            salesCount: sales.length,
+          },
+          expenses: {
+            total: Math.round(totalExpenses),
+            byCategory: expenseByCategory,
+            count: expenses.length,
+          },
+          purchases: {
+            total: Math.round(totalPurchases),
+            count: purchases.length,
+          },
+          draws: {
+            total: Math.round(totalDraws),
+            count: draws.length,
+          },
+          cashFlow: {
+            totalIn: Math.round(totalCashIn),
+            totalOut: Math.round(totalCashOut),
+            net: Math.round(netCashFlow),
+          },
+        };
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : "ดึงข้อมูลกระแสเงินสดไม่สำเร็จ" };
+      }
     },
   }),
 };
