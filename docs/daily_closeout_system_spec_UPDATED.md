@@ -1,11 +1,18 @@
 # Mai's Daily Close-Out System — Full Spec
 
-> **Working title:** ระบบปิดร้านประจำวัน (Daily Close-Out System)
+> **Working title:** ระบบปิดร้านประจำวัน (Daily Close-Out System) + นับสต็อก (Inventory Count)
 > **Replaces:** `cash_reconciliation_system_spec.md` (initial spec, now superseded)
 > **User:** Mai (primary), Mint (oversight/admin)
-> **Trigger:** End of day, after Mai fills out the printed cash ledger and counts cash in drawer
-> **Platform:** Next.js web app (mobile-first PWA) + Vercel AI SDK + Airtable API
-> **Status:** Architecture spec — ready to build
+> **Trigger:** End of day, after Mai fills out the printed cash ledger and counts cash in drawer; Inventory counting anytime
+> **Platform:** Next.js 14 App Router + Vercel AI SDK + Airtable REST API + Vercel Blob
+> **Status:** ✅ BUILT AND DEPLOYED — Live at pinit-daily.vercel.app (May 2026)
+> **Repo:** github.com — pinit-daily
+>
+> ### Build History
+> - **May 3-5, 2026:** Built and deployed. Close-out system (3 screens) + Inventory count interface.
+> - Model upgraded from Claude Sonnet 4 → **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for improved Thai handwriting extraction.
+> - Several field name mismatches resolved during build (see §5 notes).
+> - Critical fix: `cache: 'no-store'` added to all Airtable fetch calls to prevent stale data from Next.js caching.
 
 ---
 
@@ -63,7 +70,10 @@ The app opens to a dead-simple screen. No data fetching. Instant load.
 
 - **No API calls on load.** The screen is static HTML + a camera input. Loads in under 1 second even on slow Thai mobile data.
 - **Checklist is static** — not data-driven. Tapping a checkbox is a self-confirmation gesture, not a system check. Checkboxes are not required to proceed. They are visual reminders that mirror the items on Mai's printed quick reference card at the counter.
-- **Camera button** uses `<input type="file" accept="image/*" capture="environment">` which opens the device camera directly on Android. Also accepts file picker for choosing an existing photo.
+- **Camera buttons** — two separate inputs for Android compatibility:
+  - "📷 ถ่ายรูป (Take Photo)" — `<input type="file" accept="image/*" capture="environment">` forces camera on Android
+  - "🖼️ เลือกรูป (Choose Photo)" — `<input type="file" accept="image/*">` without capture opens gallery/file picker
+  - This dual-button approach was necessary because Android's behavior with `accept="image/*"` alone varies by device — some only show gallery.
 - **Image preview** appears after capture/selection so Mai can verify it's readable before submitting.
 - Once photo is selected, a **large submit button** appears: `อัพโหลดและดูผลวันนี้ (Upload & See Today's Results)`
 - **"View yesterday" link** at bottom lets Mai review prior day's dashboard (opens Screen 2 in read-only mode with yesterday's data). Only visible if a previous day's record exists.
@@ -286,58 +296,75 @@ The celebration screen. This is the final dopamine reward.
 
 ### 3.1 Stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Framework** | Next.js 14+ (App Router) | Server components, API routes, built-in image optimization, Vercel deployment |
-| **Styling** | Tailwind CSS + shadcn/ui | Consistent, accessible components. Thai font support via `Sarabun` or `Noto Sans Thai` |
-| **AI** | Vercel AI SDK (`ai` package) + Anthropic provider | `generateObject()` with Zod schema for structured extraction from photos |
-| **Model** | Claude Sonnet (latest) via Anthropic API | Best price/performance for Thai handwriting OCR. Vision capable. |
-| **Data** | Airtable API (REST) | Existing data store for all business operations. Read today's activity + write reconciliation record. |
-| **Hosting** | Vercel (free tier) | Zero-config deployment from GitHub. Serverless functions. HTTPS by default (required for PWA camera access). |
-| **Auth** | Simple PIN code (initially) | 4-digit PIN stored as env var. No user management needed yet. Upgrade to proper auth when expanding to sales forms. |
-| **Future DB** | Convex | When we need a real database (for the future sales form, product catalog caching, etc.). Not needed for v1. |
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| **Framework** | Next.js 14.2 (App Router) | Server components, API routes, Vercel deployment |
+| **Styling** | Tailwind CSS (custom dark theme) | Thai font: Sarabun (Google Fonts). No shadcn — custom components throughout. |
+| **AI** | Vercel AI SDK (`ai` + `@ai-sdk/anthropic`) | `generateObject()` with Zod schema for structured extraction from photos |
+| **Model** | **Claude Sonnet 4.6** (`claude-sonnet-4-6`) via Anthropic API | Upgraded from Sonnet 4 during build for better Thai handwriting accuracy. |
+| **Data** | Airtable REST API | All `fetch()` calls use `cache: 'no-store'` to prevent Next.js caching. Thai text in formulas requires manual URL encoding (not `URLSearchParams`). |
+| **Photo Storage** | Vercel Blob | For product photos in inventory count. Close-out ledger photos stored as Airtable attachments. |
+| **Hosting** | Vercel (deployed) | Auto-deploys from GitHub on push. HTTPS required for camera access. |
+| **Auth** | 4-digit PIN | SHA-256 hash stored in `PIN_HASH` env var. Cookie-based session (7 days). Middleware guards all routes except `/pin` and `/api/`. |
+| **Label Printing** | Render.com API | Existing service at `https://pinit-label-api.onrender.com/label/{sku}/{size}?name=...&price=...&repair=...` |
 
 ### 3.2 Project Structure
 
 ```
 pinit-daily/
 ├── app/
-│   ├── layout.tsx              # Root layout — Thai font, theme
-│   ├── page.tsx                # Screen 1: Upload
+│   ├── layout.tsx                    # Root layout — Sarabun font, dark theme, max-w-md
+│   ├── globals.css                   # Tailwind directives + animations
+│   ├── page.tsx                      # Screen 1: Upload (close-out)
 │   ├── dashboard/
-│   │   └── page.tsx            # Screen 2: Dashboard + Reconciliation
+│   │   └── page.tsx                  # Screen 2: Dashboard + Reconciliation
 │   ├── confirmation/
-│   │   └── page.tsx            # Screen 3: Confirmation + Streak
+│   │   └── page.tsx                  # Screen 3: Confirmation + Streak
+│   ├── pin/
+│   │   └── page.tsx                  # PIN entry screen
+│   ├── inventory/
+│   │   └── page.tsx                  # Inventory count interface (search + edit + create)
 │   └── api/
-│       ├── extract/
-│       │   └── route.ts        # POST: Send image to Claude, return extracted data
-│       ├── activity/
-│       │   └── route.ts        # GET: Fetch today's activity from Airtable
-│       ├── reconcile/
-│       │   └── route.ts        # POST: Write reconciliation record to Airtable
-│       └── streak/
-│           └── route.ts        # GET: Calculate current streak from Airtable
+│       ├── extract/route.ts          # POST: Claude Vision extraction
+│       ├── activity/route.ts         # GET: Fetch day's activity from Airtable
+│       ├── reconcile/route.ts        # POST: Write reconciliation to Airtable
+│       ├── streak/route.ts           # GET: Calculate streak
+│       ├── auth/route.ts             # POST: PIN verification
+│       ├── upload/route.ts           # POST: Upload image to Vercel Blob
+│       └── inventory/
+│           ├── search/route.ts       # GET: Product search (multi-word, Thai+English)
+│           ├── update/route.ts       # POST: Update product record
+│           ├── create/route.ts       # POST: Create new product
+│           ├── progress/route.ts     # GET: Count progress by category
+│           └── record/route.ts       # GET: Single product by record ID (for SKU polling)
 ├── components/
-│   ├── upload-zone.tsx         # Camera/file upload component
-│   ├── activity-card.tsx       # Single stat card (reusable)
-│   ├── activity-grid.tsx       # Grid of 6 stat cards
-│   ├── reconciliation.tsx      # Cash reconciliation breakdown
-│   ├── variance-badge.tsx      # Color-coded variance display
-│   ├── extracted-data.tsx      # Collapsible extracted data viewer/editor
-│   ├── streak-display.tsx      # Week calendar + streak counter
-│   └── checklist.tsx           # Static pre-upload checklist
+│   ├── activity-card.tsx             # Animated stat card with count-up
+│   ├── activity-grid.tsx             # 6-card grid (Sales, Purchases, Repairs, Received, Expenses, Cash)
+│   ├── reconciliation.tsx            # Cash in/out breakdown display
+│   ├── variance-badge.tsx            # Color-coded variance (green/yellow/red)
+│   ├── extracted-data.tsx            # Collapsible extracted data viewer/editor
+│   ├── confetti.tsx                  # CSS-only celebration effect
+│   ├── toast.tsx                     # Toast notification context + provider
+│   ├── providers.tsx                 # Client wrapper for providers
+│   └── inventory/
+│       ├── product-edit-card.tsx      # Inline edit card (stock, prices, photo, labels)
+│       └── create-product-form.tsx    # New product form with SKU polling
 ├── lib/
-│   ├── airtable.ts             # Airtable API client (read + write)
-│   ├── extraction-schema.ts   # Zod schema for Claude extraction output
-│   ├── reconciliation.ts      # Reconciliation computation logic
-│   ├── types.ts                # TypeScript types
-│   └── constants.ts            # Table names, field names, thresholds
+│   ├── airtable.ts                   # Airtable client (CRUD + manual URL encoding for Thai)
+│   ├── extraction-schema.ts          # Zod schema + system prompt for Claude Vision
+│   ├── reconciliation.ts             # Pure reconciliation math (runs client-side)
+│   ├── types.ts                      # All TypeScript types
+│   ├── constants.ts                  # Table names, field names, payment methods, name map
+│   └── utils.ts                      # cn(), formatBaht(), Thai date helpers
+├── middleware.ts                     # PIN auth guard (all routes except /pin, /api/)
 ├── public/
-│   ├── manifest.json           # PWA manifest
-│   └── icons/                  # PWA icons
-├── .env.local                  # API keys (Anthropic, Airtable)
+│   └── manifest.json                 # PWA manifest
+├── CLAUDE.md                         # Instructions for Claude Code
+├── daily_closeout_system_spec.md     # This spec
+├── .env.local                        # API keys (not committed)
 ├── next.config.js
 ├── tailwind.config.ts
+├── postcss.config.js
 ├── package.json
 └── tsconfig.json
 ```
@@ -505,7 +532,7 @@ export async function POST(request: Request) {
   const { image, date } = await request.json();
 
   const result = await generateObject({
-    model: anthropic('claude-sonnet-4-20250514'),
+    model: anthropic('claude-sonnet-4-6'),  // Upgraded from claude-sonnet-4-20250514
     schema: ExtractionSchema,
     messages: [
       {
@@ -651,11 +678,11 @@ One record per day. Stores the reconciliation result + system totals. Person-lev
 | 6 | `total_other_personal` | Rollup | SUM of `other` from linked person_draws |
 | 7 | `total_cash_sales` | Currency | From Airtable Sales (system value) |
 | 8 | `total_cash_refunds` | Currency | From system (฿0 until refund workflow exists) |
-| 9 | `delivery_cash_paid` | Currency | Total cash paid to delivery driver (AM + PM). Includes COD + shipping fees — one lump sum, no breakdown available. Source: paper ledger Section B. |
+| 9 | `total_delivery_fees` | Currency | Total cash paid to delivery driver (AM + PM). Includes COD + shipping fees — one lump sum, no breakdown available. Source: paper ledger Section B. |
 | 10 | `other_cash_in` | Currency | Section C "เข้า" items total |
 | 11 | `other_cash_out` | Currency | Section C "ออก" items total |
 | 12 | `total_cash_in` | Formula | `{total_cash_sales} + {other_cash_in}` |
-| 13 | `total_cash_out` | Formula | `{total_draws} + {total_food} + {total_other_personal} + {total_cash_refunds} + {delivery_cash_paid} + {other_cash_out}` |
+| 13 | `total_cash_out` | Formula | `{total_draws} + {total_food} + {total_other_personal} + {total_cash_refunds} + {total_delivery_fees} + {other_cash_out}` |
 | 14 | `expected_balance` | Formula | `{starting_balance} + {total_cash_in} - {total_cash_out}` |
 | 15 | `actual_count` | Currency | Physical cash count at end of day |
 | 16 | `variance` | Formula | `{actual_count} - {expected_balance}` |
@@ -713,7 +740,7 @@ const reconciliation = await airtable.create('Daily Cash Reconciliation', {
   person_draws: drawRecords.map(r => r.id), // link to created draw records
   total_cash_sales: data.activity.sales.cash_total,
   total_cash_refunds: 0, // not yet captured in system
-  delivery_cash_paid: data.extraction.delivery_am + data.extraction.delivery_pm,
+  total_delivery_fees: data.extraction.delivery_am + data.extraction.delivery_pm,
   other_cash_in: sumSectionC(data.extraction.section_c_items, 'in'),
   other_cash_out: sumSectionC(data.extraction.section_c_items, 'out'),
   actual_count: data.extraction.actual_cash_count,
@@ -806,7 +833,7 @@ export function computeReconciliation(
       total_draws,
       total_food,
       total_other_personal,
-      delivery_cash_paid: { am: extraction.delivery_am, pm: extraction.delivery_pm,
+      total_delivery_fees: { am: extraction.delivery_am, pm: extraction.delivery_pm,
                   total: total_delivery },
       refunds,
       section_c: { in: section_c_in, out: section_c_out,
@@ -1356,26 +1383,118 @@ This is the "blow them away" dashboard. Going from zero financial visibility to 
 
 ### Testing Checklist
 
-- [ ] Photo upload works on Mai's Android phone (Chrome)
-- [ ] Photo upload works on Mai's iPad (Safari — may need testing)
-- [ ] Claude extraction returns correct values from a real filled-out form
-- [ ] Extraction handles empty cells correctly (returns 0, not null)
-- [ ] Extraction handles Thai numerals (๐-๙)
-- [ ] Activity data fetches correctly from all Airtable tables
-- [ ] Reconciliation math is correct (verify against manual calculation)
-- [ ] Edit mode on extracted data works and recalculates live
-- [ ] Submit writes correct record to Airtable
-- [ ] Variance notification sends to Mint
-- [ ] Streak calculation handles weekends correctly
-- [ ] PIN auth works and persists via cookie
-- [ ] PWA installs correctly on Android home screen
-- [ ] App loads in < 2 seconds on Thai mobile data
+- [x] Photo upload works on Mai's Android phone (Chrome) — requires "Open in Chrome" not in-app browsers
+- [x] Photo upload works on iPhone (Safari/Brave)
+- [x] Claude extraction returns correct values from real filled-out forms (Sonnet 4.6)
+- [x] Extraction handles empty cells correctly (returns 0)
+- [ ] Extraction handles Thai numerals (๐-๙) — not tested with Thai numeral forms
+- [x] Activity data fetches correctly from all Airtable tables
+- [x] Reconciliation math is correct (verified against manual calculation for May 2 + May 3)
+- [x] Edit mode on extracted data works and recalculates live
+- [x] Submit writes correct record to Airtable (Daily Cash Reconciliation + Daily Person Draws)
+- [ ] Variance notification sends to Mint — NOT IMPLEMENTED yet
+- [ ] Streak calculation handles weekends correctly — open question #10 unresolved
+- [x] PIN auth works and persists via cookie
+- [ ] PWA installs correctly on Android home screen — not formally tested
+- [x] App loads quickly on mobile
+- [x] Inventory search works (Thai, English, partial SKU)
+- [x] Inventory edit + save works with toast confirmation
+- [x] Inventory create works with SKU polling + label printing
+- [x] Label printing works (4 sizes) with correct URL format
+
+---
+
+## 14. Build Notes & Lessons Learned (May 3-5, 2026)
+
+### Issues Encountered & Resolved
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| Activity fetch returning empty | `encodeURIComponent()` in `airtableFetch` was double-encoding query params including Thai text | Removed `encodeURIComponent` from `airtableFetch`, encode only the table name in `selectRecords` |
+| API routes redirecting to `/pin` | Middleware was blocking `/api/` routes | Added `/api/` to `PUBLIC_PATHS` in middleware |
+| Airtable 404 on Daily Cash Reconciliation | Table existed but field names didn't match — `delivery_cash_paid` should be `total_delivery_fees` | Updated field name in constants and reconcile route |
+| Duplicate person draw records | First submit attempt created draws but crashed on reconciliation (field name error). Retry created new draws. | Orphaned draw deleted manually. TODO: add idempotency check. |
+| Thai text search returning empty | `URLSearchParams.toString()` double-encodes Thai characters | Built query string manually with `encodeURIComponent()` directly for `filterByFormula`, used `URLSearchParams` only for other params |
+| `LOWER()` breaks Thai search | Airtable's `LOWER()` doesn't work correctly with Thai characters | Removed `LOWER()` for Thai-only words, kept it for Latin characters only |
+| Case-sensitive English search | "w125i" didn't match "W125i" | Added `LOWER()` wrapping for words containing Latin characters |
+| Partial SKU search not working | Pure-digit queries (e.g., "2881") didn't match `hasLatin` regex, so SKU field was excluded from search | Added `SEARCH` on `{sku}` to both Latin and non-Latin code paths |
+| SKU polling always timing out | Next.js caching `fetch()` calls to Airtable by default — polling returned stale data | Added `cache: 'no-store'` to ALL Airtable fetch calls |
+| Photo upload 413 error | Base64 image too large for request body | Added client-side image compression (max 1200px, JPEG 0.7 quality) |
+| Photo upload 422 INVALID_ATTACHMENT_OBJECT | Airtable doesn't accept base64 data URLs for attachments | Implemented Vercel Blob upload → pass public URL to Airtable |
+| Android camera not available | Removing `capture="environment"` caused some Android devices to only show gallery | Added two separate buttons: "Take Photo" (with capture) and "Choose Photo" (without) |
+| Dynamic route `[recordId]` not matching | Next.js 14 had issues resolving the dynamic API route | Replaced with query parameter route: `/api/inventory/record?id=` |
+| Category create error | Extra quotes around category value in API request | Added `.trim().replace(/^["']+\|["']+$/g, '')` to strip quotes |
+| Discord in-app browser | Android Discord WebView blocks file/camera access | Users must open in Chrome. Added PWA home screen install guidance. |
+
+### Key Technical Decisions Made During Build
+
+1. **No `streamUI`** — used simpler `generateObject()` for extraction. `streamUI` reserved for the future AI chat interface.
+2. **Client-side reconciliation** — math runs in browser for instant recalculation when editing. Server validates before writing.
+3. **Two-button camera pattern** — required for cross-platform Android/iOS compatibility.
+4. **Manual URL encoding** — `URLSearchParams` doesn't work for Thai text in Airtable formulas.
+5. **Toast notifications** — added for save confirmations after testing showed inline button state changes were too subtle on mobile.
+6. **SKU polling with retry** — 30-second window with manual retry button, necessary because Airtable automation timing varies.
+
+---
+
+## 15. Inventory Count Interface (Built May 4-5, 2026)
+
+### Overview
+
+A search-first interface at `/inventory` for physical stock counting. Mai or Mint walks the shelves, searches for products, updates stock counts, prices, and prints labels.
+
+### Features
+
+- **Search** — multi-word Thai + case-insensitive English + partial SKU, debounced 300ms, max 20 results
+- **Edit card** — inline editing of stock (stepper), cost, sell price, repair price, display name, notes, counted checkbox
+- **Create product** — new product form with auto-counted badge, category dropdown, SKU polling after create (30s)
+- **Print labels** — 4 size buttons (40×20, 40×30, 70×30, 70×50) opening Render.com label API
+- **Product photo** — two-button camera (Take Photo / Choose Photo), compressed on client, uploaded to Vercel Blob
+- **Progress tracking** — counted/total by category, recently counted list (last 10)
+- **Toast notifications** — save/create confirmations
+
+### API Routes
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/api/inventory/search` | GET | Product search with `?q=` parameter |
+| `/api/inventory/update` | POST | Update product fields by record ID |
+| `/api/inventory/create` | POST | Create new product |
+| `/api/inventory/progress` | GET | Count progress + recently counted |
+| `/api/inventory/record` | GET | Single product by `?id=` (for SKU polling) |
+| `/api/upload` | POST | Upload base64 image to Vercel Blob, return URL |
+
+### Airtable Fields Used
+
+Products table fields: `sku` (barcode), `display_name`, `original_name`, `category`, `current_stock`, `last_known_cost_baht`, `last_known_sell_price_baht`, `repair_price_total`, `notes`, `has_been_counted` (checkbox), `counted_date` (date), `counted_by` (text), `product_photo` (attachment), `show_repair_on_label` (checkbox)
+
+### Search Implementation Notes
+
+- Thai text: `SEARCH("term", {display_name})` — no `LOWER()` (breaks Thai)
+- English text: `SEARCH("term", LOWER({display_name}))` — with `LOWER()` for case-insensitivity
+- SKU: `SEARCH("term", {sku})` — no `LOWER()` (barcode field type)
+- Multi-word: split on spaces, AND all word clauses
+- Formula built manually (not via `URLSearchParams`) to prevent double-encoding
+
+---
+
+## 16. Environment Variables (Production)
+
+```
+ANTHROPIC_API_KEY=sk-ant-...          # Claude API
+AIRTABLE_API_KEY=pat...               # Airtable Personal Access Token (scopes: data.records:read, data.records:write, schema.bases:read)
+AIRTABLE_BASE_ID=app...               # Airtable base ID
+PIN_HASH=...                          # SHA-256 hash of 4-digit PIN
+VARIANCE_THRESHOLD=50                 # Baht threshold for variance alerts
+NEXT_PUBLIC_LABEL_API_URL=https://pinit-label-api.onrender.com  # Label printing API
+BLOB_READ_WRITE_TOKEN=...             # Vercel Blob storage token
+```
 
 ---
 
 *Created: May 2026*
 *Author: Ari + Claude*
+*Built: May 3-5, 2026*
+*Deployed: pinit-daily.vercel.app*
 *Supersedes: cash_reconciliation_system_spec.md, daily_cash_reconciliation_schema.md*
-*Airtable field names verified from CSV exports: May 2, 2026*
-*Dependencies: Airtable base (live), Anthropic API key, Vercel account*
-*Next step: Create the two new Airtable tables, then begin build*
+*Airtable field names verified from CSV exports + API schema: May 2-5, 2026*
