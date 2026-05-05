@@ -14,6 +14,14 @@ export default function ChatPage() {
     useChat({ api: "/api/chat" });
 
   useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      append({ role: 'user', content: e.detail });
+    };
+    window.addEventListener('card-action', handler as EventListener);
+    return () => window.removeEventListener('card-action', handler as EventListener);
+  }, [append]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -81,7 +89,7 @@ export default function ChatPage() {
                           invocation.state === "result" ? invocation.result : undefined
                         }
                         onAction={(message: string) => {
-                          handleContextButton(message);
+                          window.dispatchEvent(new CustomEvent('card-action', { detail: message }));
                         }}
                       />
                     ))}

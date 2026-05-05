@@ -30,8 +30,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           onPointerDown={(e) => {
             e.stopPropagation();
             if (p.stock > 0 && onAction) {
-              const msg = `ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`;
-              setTimeout(() => onAction(msg), 50);
+              onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
           }}
           className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
@@ -118,8 +117,7 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
           onPointerDown={(e) => {
             e.stopPropagation();
             if (onAction) {
-              const msg = `อัปเดตสถานะงานซ่อม #${job.jobId}`;
-              setTimeout(() => onAction(msg), 50);
+              onAction(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
             }
           }}
           className={`bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
@@ -168,8 +166,7 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
           onPointerDown={(e) => {
             e.stopPropagation();
             if (onAction) {
-              const msg = `ดูประวัติลูกค้า ${c.name}`;
-              setTimeout(() => onAction(msg), 50);
+              onAction(`ดูประวัติลูกค้า ${c.name}`);
             }
           }}
           className={`bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
@@ -223,8 +220,9 @@ function SaleConfirmationCard({ data, onAction }: { data: {
         <button
           onPointerDown={(e) => {
             e.stopPropagation();
-            const msg = "ต้องการบันทึกการขาย";
-            setTimeout(() => onAction!(msg), 50);
+            if (onAction) {
+              onAction("ต้องการบันทึกการขาย");
+            }
           }}
           className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full relative z-10 cursor-pointer"
         >
