@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "ai/react";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ContextButtons } from "@/components/chat/context-buttons";
 import { ToolResultCard } from "@/components/chat/tool-result-card";
@@ -12,6 +12,23 @@ export default function ChatPage() {
 
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } =
     useChat({ api: "/api/chat" });
+
+  const pendingAction = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoading && pendingAction.current) {
+      append({ role: "user", content: pendingAction.current });
+      pendingAction.current = null;
+    }
+  }, [isLoading, append]);
+
+  const handleCardAction = useCallback((message: string) => {
+    if (isLoading) {
+      pendingAction.current = message;
+    } else {
+      append({ role: "user", content: message });
+    }
+  }, [isLoading, append]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,7 +97,7 @@ export default function ChatPage() {
                         result={
                           invocation.state === "result" ? invocation.result : undefined
                         }
-                        onAction={(message) => append({ role: "user", content: message })}
+                        onAction={handleCardAction}
                       />
                     ))}
                   </div>
