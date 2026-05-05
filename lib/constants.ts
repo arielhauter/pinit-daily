@@ -3,6 +3,7 @@ export const TABLES = {
   PURCHASES: "Purchases",
   PURCHASE_LINE_ITEMS: "Purchase Line Items",
   REPAIR_JOBS: "Repair Jobs",
+  REPAIR_JOB_PARTS: "Repair Job Parts",
   EXPENSES: "Expenses",
   PRODUCTS: "Products",
   DAILY_CASH_RECONCILIATION: "Daily Cash Reconciliation",

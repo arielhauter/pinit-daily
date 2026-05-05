@@ -572,6 +572,48 @@ function CashFlowCard({ data }: { data: {
   );
 }
 
+function WorkOrderUpdateCard({ data }: { data: {
+  success: boolean; error?: string;
+  jobId?: number; actualHours?: number; partsAdded?: number;
+  unmatchedParts?: string[]; status?: string; notes?: string | null;
+  bootAdvice?: string | null;
+} }) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ อัปเดตใบสั่งงานไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ อัปเดตงานซ่อม #{data.jobId} เรียบร้อย!</div>
+      <div className="text-sm text-slate-300 mt-1">
+        ⏱ ชั่วโมงจริง: {data.actualHours} ชม.
+      </div>
+      <div className="text-sm text-slate-300">
+        📊 สถานะ: {data.status}
+      </div>
+      {data.partsAdded && data.partsAdded > 0 && (
+        <div className="text-sm text-slate-300">
+          🔩 อะไหล่เพิ่ม: {data.partsAdded} รายการ
+        </div>
+      )}
+      {data.unmatchedParts && data.unmatchedParts.length > 0 && (
+        <div className="text-sm text-yellow-300 mt-1">
+          ⚠️ ไม่พบในระบบ: {data.unmatchedParts.join(", ")}
+        </div>
+      )}
+      {data.bootAdvice && (
+        <div className="text-sm text-sky-300 mt-1">
+          💬 แจ้งลูกค้า: {data.bootAdvice}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ToolResultCard({ toolName, state, result }: ToolResultCardProps) {
   if (state !== "result") {
     return (
@@ -626,6 +668,8 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <TopSellersCard data={data as Parameters<typeof TopSellersCard>[0]["data"]} />;
     case "get_cash_flow_summary":
       return <CashFlowCard data={data as Parameters<typeof CashFlowCard>[0]["data"]} />;
+    case "update_repair_from_workorder":
+      return <WorkOrderUpdateCard data={data as Parameters<typeof WorkOrderUpdateCard>[0]["data"]} />;
     default:
       return (
         <pre className="text-xs text-slate-400 overflow-auto">

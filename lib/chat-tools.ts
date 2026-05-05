@@ -1256,6 +1256,121 @@ export const chatTools = {
     },
   }),
 
+  update_repair_from_workorder: tool({
+    description:
+      "อัปเดตงานซ่อมจากใบสั่งงานที่บูทกรอก — ชั่วโมงจริง, อะไหล่เพิ่มเติม, หมายเหตุ (Update repair job from Boot's completed work order). IMPORTANT: Always confirm with user before calling.",
+    parameters: z.object({
+      job_id: z.number().describe("เลขที่งานซ่อม (auto-number)"),
+      actual_hours_seconds: z
+        .number()
+        .describe("ชั่วโมงจริงรวม เป็นวินาที (เช่น 6.5 ชม. = 23400)"),
+      additional_parts: z
+        .array(
+          z.object({
+            product_name: z.string().describe("ชื่ออะไหล่"),
+            quantity: z.number().describe("จำนวน"),
+          })
+        )
+        .optional()
+        .describe("อะไหล่เพิ่มเติม"),
+      notes: z.string().optional().describe("หมายเหตุจากบูท"),
+      boot_advice: z
+        .string()
+        .optional()
+        .describe("คำแนะนำให้มายแจ้งลูกค้า"),
+      completion_date: z
+        .string()
+        .optional()
+        .describe("วันที่ซ่อมเสร็จ YYYY-MM-DD"),
+    }),
+    execute: async ({
+      job_id,
+      actual_hours_seconds,
+      additional_parts,
+      notes,
+      boot_advice,
+      completion_date,
+    }) => {
+      try {
+        const jobs = await selectRecords(TABLES.REPAIR_JOBS, {
+          filterByFormula: `{job_id} = ${job_id}`,
+          maxRecords: 1,
+          fields: ["job_id", "status", "notes"],
+        });
+
+        if (jobs.length === 0) {
+          return {
+            success: false,
+            error: `ไม่พบงานซ่อม #${job_id}`,
+          };
+        }
+
+        const jobRecord = jobs[0];
+
+        const updateFields: Record<string, unknown> = {
+          actual_hours: actual_hours_seconds,
+          status: "เสร็จแล้ว (Complete)",
+          completion_date_boot:
+            completion_date || new Date().toISOString().split("T")[0],
+        };
+
+        if (notes) {
+          updateFields.notes = notes;
+        }
+        if (boot_advice) {
+          updateFields.boot_advice_for_mai = boot_advice;
+        }
+
+        await updateRecord(TABLES.REPAIR_JOBS, jobRecord.id, updateFields);
+
+        const matchedParts: string[] = [];
+        const unmatchedParts: string[] = [];
+
+        if (additional_parts && additional_parts.length > 0) {
+          for (const part of additional_parts) {
+            const s = sanitizeForFormula(part.product_name);
+            const products = await selectRecords(TABLES.PRODUCTS, {
+              filterByFormula: `SEARCH("${s}", {display_name})`,
+              maxRecords: 1,
+              fields: ["sku", "display_name"],
+            });
+
+            if (products.length > 0) {
+              await createRecord(TABLES.REPAIR_JOB_PARTS, {
+                repair_job: [jobRecord.id],
+                product: [products[0].id],
+                quantity: part.quantity,
+              });
+              matchedParts.push(part.product_name);
+            } else {
+              unmatchedParts.push(part.product_name);
+            }
+          }
+        }
+
+        return {
+          success: true,
+          jobId: job_id,
+          jobRecordId: jobRecord.id,
+          actualHours: actual_hours_seconds / 3600,
+          partsAdded: matchedParts.length,
+          unmatchedParts,
+          status: "เสร็จแล้ว (Complete)",
+          notes: notes || null,
+          bootAdvice: boot_advice || null,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error:
+            err instanceof Error
+              ? err.message
+              : "อัปเดตงานซ่อมจากใบสั่งงานไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
   get_cash_flow_summary: tool({
     description:
       "สรุปกระแสเงินสด — รายได้, ค่าใช้จ่าย, ยอดซื้อ, เงินเบิก, กระแสเงินสดสุทธิ (Cash flow overview)",

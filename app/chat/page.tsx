@@ -6,13 +6,18 @@ import { useRouter } from "next/navigation";
 import { ContextButtons } from "@/components/chat/context-buttons";
 import { ToolResultCard } from "@/components/chat/tool-result-card";
 import { QrScanner } from "@/components/chat/qr-scanner";
+import { compressImage } from "@/lib/compress-image";
 
 export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [showWorkOrderUpload, setShowWorkOrderUpload] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [oracleMode, setOracleMode] = useState(false);
+  const woCameraRef = useRef<HTMLInputElement>(null);
+  const woGalleryRef = useRef<HTMLInputElement>(null);
 
   const { messages, input, handleInputChange, handleSubmit, append, isLoading, setMessages } =
     useChat({
@@ -80,6 +85,47 @@ export default function ChatPage() {
 
   const handleClearChat = () => {
     setMessages([]);
+  };
+
+  const handleWorkOrderPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setShowWorkOrderUpload(false);
+    setExtracting(true);
+
+    try {
+      const base64 = await compressImage(file, 1200, 0.7);
+      const res = await fetch("/api/chat/extract-workorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64 }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Extraction failed");
+      }
+
+      const extraction = await res.json();
+      const partsText =
+        extraction.additional_parts?.length > 0
+          ? extraction.additional_parts
+              .map((p: { name: string; quantity: number }) => `${p.name} ×${p.quantity}`)
+              .join(", ")
+          : "ไม่มี";
+
+      append({
+        role: "user",
+        content: `📋 ถ่ายรูปใบสั่งงานซ่อม งาน #${extraction.job_id}\n\nข้อมูลที่อ่านได้:\n- ชั่วโมงรวม: ${extraction.total_hours} ชม.\n- อะไหล่เพิ่ม: ${partsText}\n- หมายเหตุ: ${extraction.notes || "ไม่มี"}\n- คำแนะนำลูกค้า: ${extraction.advice_for_customer || "ไม่มี"}\n\nถูกต้องไหม?`,
+      });
+    } catch {
+      append({
+        role: "user",
+        content: "📋 ถ่ายรูปใบสั่งงานซ่อม แต่อ่านไม่สำเร็จ ช่วยให้ข้อมูลเองค่ะ",
+      });
+    } finally {
+      setExtracting(false);
+    }
   };
 
   return (
@@ -192,18 +238,71 @@ export default function ChatPage() {
         />
       )}
 
+      {/* Hidden file inputs for work order photo */}
+      <input
+        ref={woCameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleWorkOrderPhoto}
+      />
+      <input
+        ref={woGalleryRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleWorkOrderPhoto}
+      />
+
+      {/* Work Order Upload Options */}
+      {showWorkOrderUpload && (
+        <div className="absolute bottom-20 left-3 bg-slate-800 rounded-lg shadow-lg p-2 space-y-1 z-40 border border-slate-700">
+          <button
+            onClick={() => woCameraRef.current?.click()}
+            className="block w-full text-left text-sm text-slate-200 px-3 py-2 rounded hover:bg-slate-700"
+          >
+            📷 ถ่ายรูปใบสั่งงาน
+          </button>
+          <button
+            onClick={() => woGalleryRef.current?.click()}
+            className="block w-full text-left text-sm text-slate-200 px-3 py-2 rounded hover:bg-slate-700"
+          >
+            🖼️ เลือกรูปจากแกลเลอรี
+          </button>
+        </div>
+      )}
+
+      {/* Extracting indicator */}
+      {extracting && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-orange-900/30 border-t border-orange-500/30">
+          <span className="animate-spin text-sm">⏳</span>
+          <span className="text-sm text-orange-300">กำลังอ่านใบสั่งงาน...</span>
+        </div>
+      )}
+
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="flex gap-2 p-3 border-t border-slate-700 bg-slate-900"
+        className="relative flex gap-2 p-3 border-t border-slate-700 bg-slate-900"
       >
         <button
           type="button"
           onClick={() => setShowScanner(true)}
-          disabled={isLoading}
+          disabled={isLoading || extracting}
           className="text-slate-400 hover:text-white w-10 h-10 flex items-center justify-center disabled:opacity-50 active:scale-95 transition-transform"
         >
           📷
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowWorkOrderUpload(!showWorkOrderUpload)}
+          disabled={isLoading || extracting}
+          className={`w-10 h-10 flex items-center justify-center disabled:opacity-50 active:scale-95 transition-transform ${
+            showWorkOrderUpload ? "text-orange-400" : "text-slate-400 hover:text-white"
+          }`}
+        >
+          📋
         </button>
         <input
           ref={inputRef}
@@ -211,11 +310,11 @@ export default function ChatPage() {
           onChange={handleInputChange}
           placeholder="พิมพ์ข้อความ..."
           className="flex-1 bg-slate-800 text-white rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
-          disabled={isLoading}
+          disabled={isLoading || extracting}
         />
         <button
           type="submit"
-          disabled={isLoading || !input.trim()}
+          disabled={isLoading || extracting || !input.trim()}
           className="bg-sky-500 text-white rounded-full w-10 h-10 flex items-center justify-center disabled:opacity-50 active:scale-95 transition-transform"
         >
           ➤
@@ -224,7 +323,7 @@ export default function ChatPage() {
 
       {/* Version */}
       <div className="text-xs text-slate-600 text-center py-1">
-        Pinit AI v1.0 — Phase 5
+        Pinit AI v1.1 — Phase 6
       </div>
     </div>
   );

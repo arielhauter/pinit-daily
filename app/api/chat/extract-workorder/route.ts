@@ -1,0 +1,66 @@
+import { generateObject } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { WorkOrderExtractionSchema } from "@/lib/workorder-schema";
+
+export const maxDuration = 60;
+
+export async function POST(req: Request) {
+  try {
+    const { imageBase64 } = await req.json();
+
+    if (!imageBase64 || typeof imageBase64 !== "string") {
+      return Response.json(
+        { error: "Missing image data" },
+        { status: 400 }
+      );
+    }
+
+    const result = await generateObject({
+      model: anthropic("claude-sonnet-4-6"),
+      schema: WorkOrderExtractionSchema,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              image: imageBase64,
+            },
+            {
+              type: "text",
+              text: `นี่คือรูปถ่ายใบสั่งงานซ่อมจากร้านพินิจเจริญยนต์ (Pinit Charoen Yon auto parts shop)
+
+ใบสั่งงานนี้มีส่วนที่พิมพ์ (printed) และส่วนที่เขียนด้วยมือ (handwritten by Boot the mechanic)
+
+ให้อ่านข้อมูลที่เขียนด้วยมือ:
+1. **เลขที่งาน (job_id)** — ตัวเลขที่ด้านขวาบน
+2. **ตารางบันทึกเวลา** — ตาราง "วันที่ | เริ่ม | จบ | ชม. | หมายเหตุ" ที่บูทเขียน
+3. **ชั่วโมงรวม** — ตัวเลขในช่อง "ชั่วโมงรวม:" ใต้ตาราง
+4. **อะไหล่เพิ่มเติม** — ตาราง "ชื่ออะไหล่ | จำนวน" ที่บูทเขียนเพิ่ม (อาจว่าง)
+5. **หมายเหตุ** — ข้อความในช่อง "หมายเหตุ" (อาจว่าง)
+6. **คำแนะนำให้ลูกค้า** — ถ้ามี
+
+ถ้าอ่านไม่ชัด ให้ใส่ค่าที่ใกล้เคียงที่สุด
+ถ้าช่องไหนว่าง (บูทไม่ได้เขียน) ให้ข้ามไป
+
+ลายมือบูทอาจใช้ตัวเลขไทย (๐-๙) หรือตัวเลขอารบิก (0-9) ให้แปลงเป็นตัวเลขอารบิกทั้งหมด`,
+            },
+          ],
+        },
+      ],
+    });
+
+    return Response.json(result.object);
+  } catch (err) {
+    console.error("Work order extraction error:", err);
+    return Response.json(
+      {
+        error:
+          err instanceof Error
+            ? err.message
+            : "ไม่สามารถอ่านใบสั่งงานได้",
+      },
+      { status: 500 }
+    );
+  }
+}
