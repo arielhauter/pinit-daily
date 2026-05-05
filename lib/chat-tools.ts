@@ -128,6 +128,52 @@ function extractPhotoUrl(photoField: unknown): string | null {
   return null;
 }
 
+function getDateRange(period: string, startDate?: string, endDate?: string): { start: string; end: string } {
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+  const [y, m, d] = todayStr.split('-').map(Number);
+  const fmt = (dt: Date) =>
+    `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  const today = new Date(y, m - 1, d);
+
+  switch (period) {
+    case 'today':
+      return { start: todayStr, end: todayStr };
+    case 'yesterday': {
+      const yest = new Date(y, m - 1, d - 1);
+      return { start: fmt(yest), end: fmt(yest) };
+    }
+    case 'week': {
+      const dow = today.getDay();
+      const mon = new Date(y, m - 1, d - dow + (dow === 0 ? -6 : 1));
+      return { start: fmt(mon), end: todayStr };
+    }
+    case 'last_week': {
+      const dow = today.getDay();
+      const mon = new Date(y, m - 1, d - dow + (dow === 0 ? -6 : 1) - 7);
+      const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+      return { start: fmt(mon), end: fmt(sun) };
+    }
+    case 'month':
+      return { start: `${y}-${String(m).padStart(2, '0')}-01`, end: todayStr };
+    case 'last_month': {
+      const first = new Date(y, m - 2, 1);
+      const last = new Date(y, m - 1, 0);
+      return { start: fmt(first), end: fmt(last) };
+    }
+    case 'custom':
+      return { start: startDate || todayStr, end: endDate || todayStr };
+    default:
+      return { start: todayStr, end: todayStr };
+  }
+}
+
+function buildDateFilter(fieldName: string, start: string, end: string): string {
+  if (start === end) {
+    return `IS_SAME({${fieldName}}, '${start}', 'day')`;
+  }
+  return `AND(IS_AFTER({${fieldName}}, DATEADD('${start}', -1, 'days')), IS_BEFORE({${fieldName}}, DATEADD('${end}', 1, 'days')))`;
+}
+
 export const chatTools = {
   lookup_product: tool({
     description:
@@ -776,6 +822,501 @@ export const chatTools = {
           error: err instanceof Error ? err.message : "อัปเดตสถานะไม่สำเร็จ",
         };
       }
+    },
+  }),
+
+  get_sales_summary: tool({
+    description:
+      "สรุปยอดขายตามช่วงเวลา — รายได้, จำนวน, แยกตามวิธีชำระและประเภท (Sales summary by period)",
+    parameters: z.object({
+      period: z.enum(["today", "yesterday", "week", "last_week", "month", "last_month", "custom"]).describe("ช่วงเวลา"),
+      start_date: z.string().optional().describe("วันเริ่มต้น YYYY-MM-DD (สำหรับ custom)"),
+      end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD (สำหรับ custom)"),
+    }),
+    execute: async ({ period, start_date, end_date }) => {
+      const { start, end } = getDateRange(period, start_date, end_date);
+
+      const records = await selectRecords(TABLES.SALES, {
+        filterByFormula: buildDateFilter("sale_date", start, end),
+        fields: ["sale_id", "sale_date", "transaction_type", "payment_method", "total", "total_collected"],
+      });
+
+      const byPaymentMethod: Record<string, { count: number; total: number }> = {};
+      const byType: Record<string, { count: number; total: number }> = {};
+      const byDate: Record<string, { count: number; total: number }> = {};
+      let totalRevenue = 0;
+      let totalCollected = 0;
+
+      records.forEach((r) => {
+        const f = r.fields;
+        const total = (f.total as number) || 0;
+        const collected = (f.total_collected as number) || total;
+        const pm = (f.payment_method as string) || "ไม่ระบุ";
+        const type = (f.transaction_type as string) || "ไม่ระบุ";
+        const date = ((f.sale_date as string) || "").split("T")[0];
+
+        totalRevenue += total;
+        totalCollected += collected;
+
+        if (!byPaymentMethod[pm]) byPaymentMethod[pm] = { count: 0, total: 0 };
+        byPaymentMethod[pm].count++;
+        byPaymentMethod[pm].total += collected;
+
+        if (!byType[type]) byType[type] = { count: 0, total: 0 };
+        byType[type].count++;
+        byType[type].total += total;
+
+        if (date) {
+          if (!byDate[date]) byDate[date] = { count: 0, total: 0 };
+          byDate[date].count++;
+          byDate[date].total += collected;
+        }
+      });
+
+      const dailyBreakdown =
+        start !== end
+          ? Object.entries(byDate)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([date, info]) => ({ date, ...info }))
+          : undefined;
+
+      return {
+        period,
+        startDate: start,
+        endDate: end,
+        count: records.length,
+        totalRevenue,
+        totalCollected,
+        averageSale: records.length > 0 ? Math.round(totalCollected / records.length) : 0,
+        byPaymentMethod,
+        byTransactionType: byType,
+        dailyBreakdown,
+      };
+    },
+  }),
+
+  get_purchase_summary: tool({
+    description:
+      "สรุปยอดซื้อตามช่วงเวลาและผู้จำหน่าย (Purchase summary by period and supplier)",
+    parameters: z.object({
+      period: z.enum(["today", "yesterday", "week", "last_week", "month", "last_month", "custom"]).describe("ช่วงเวลา"),
+      start_date: z.string().optional().describe("วันเริ่มต้น YYYY-MM-DD"),
+      end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD"),
+      supplier_name: z.string().optional().describe("กรองตามผู้จำหน่าย"),
+    }),
+    execute: async ({ period, start_date, end_date, supplier_name }) => {
+      const { start, end } = getDateRange(period, start_date, end_date);
+
+      const allRecords = await selectRecords(TABLES.PURCHASES, {
+        filterByFormula: buildDateFilter("purchase_date", start, end),
+        fields: ["purchase_id", "purchase_date", "supplier", "total_paid", "shipping_cost", "payment_method"],
+      });
+
+      const supplierIds = new Set<string>();
+      allRecords.forEach((p) => {
+        const s = p.fields.supplier as string[];
+        if (s?.length) s.forEach((id) => supplierIds.add(id));
+      });
+
+      const supplierMap: Record<string, string> = {};
+      for (const id of Array.from(supplierIds)) {
+        try {
+          const rec = await getRecord("Suppliers", id);
+          supplierMap[id] = (rec.fields.display_name as string) || "ไม่ระบุ";
+        } catch {
+          supplierMap[id] = "ไม่ระบุ";
+        }
+      }
+
+      const getSupplierName = (r: (typeof allRecords)[0]) => {
+        const ids = (r.fields.supplier as string[]) || [];
+        return ids.length > 0 ? supplierMap[ids[0]] || "ไม่ระบุ" : "ไม่ระบุ";
+      };
+
+      const records = supplier_name
+        ? allRecords.filter((r) =>
+            getSupplierName(r).toLowerCase().includes(supplier_name.toLowerCase())
+          )
+        : allRecords;
+
+      const bySupplier: Record<string, { count: number; total: number }> = {};
+      const byPaymentMethod: Record<string, { count: number; total: number }> = {};
+      let totalSpent = 0;
+      let totalShipping = 0;
+
+      records.forEach((r) => {
+        const f = r.fields;
+        const paid = (f.total_paid as number) || 0;
+        const shipping = (f.shipping_cost as number) || 0;
+        const pm = (f.payment_method as string) || "ไม่ระบุ";
+        const name = getSupplierName(r);
+
+        totalSpent += paid;
+        totalShipping += shipping;
+
+        if (!bySupplier[name]) bySupplier[name] = { count: 0, total: 0 };
+        bySupplier[name].count++;
+        bySupplier[name].total += paid;
+
+        if (!byPaymentMethod[pm]) byPaymentMethod[pm] = { count: 0, total: 0 };
+        byPaymentMethod[pm].count++;
+        byPaymentMethod[pm].total += paid;
+      });
+
+      return {
+        period,
+        startDate: start,
+        endDate: end,
+        count: records.length,
+        totalSpent,
+        totalShipping,
+        bySupplier,
+        byPaymentMethod,
+      };
+    },
+  }),
+
+  get_margin_analysis: tool({
+    description:
+      "วิเคราะห์กำไร — รายได้, ต้นทุน, กำไรขั้นต้น, เปอร์เซ็นต์มาร์จิ้น (Margin analysis: revenue, COGS, gross profit, margin %)",
+    parameters: z.object({
+      period: z.enum(["today", "yesterday", "week", "last_week", "month", "last_month", "custom"]).describe("ช่วงเวลา"),
+      start_date: z.string().optional().describe("วันเริ่มต้น YYYY-MM-DD"),
+      end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD"),
+    }),
+    execute: async ({ period, start_date, end_date }) => {
+      const { start, end } = getDateRange(period, start_date, end_date);
+
+      const sales = await selectRecords(TABLES.SALES, {
+        filterByFormula: buildDateFilter("sale_date", start, end),
+        fields: ["sale_id"],
+      });
+
+      if (sales.length === 0) {
+        return {
+          period,
+          startDate: start,
+          endDate: end,
+          totalRevenue: 0,
+          totalCOGS: 0,
+          grossProfit: 0,
+          marginPercent: 0,
+          itemCount: 0,
+          isPartial: false,
+          topMarginProducts: [],
+          worstMarginProducts: [],
+        };
+      }
+
+      const saleRecordIds = new Set(sales.map((s) => s.id));
+
+      const lineItems = await selectRecords("Sale Line Items", {
+        fields: ["sale_id", "quantity", "line_total", "product_cost_lookup", "product_name_lookup"],
+        maxRecords: 500,
+      });
+
+      const matched = lineItems.filter((li) => {
+        const saleIds = (li.fields.sale_id as string[]) || [];
+        return saleIds.some((id) => saleRecordIds.has(id));
+      });
+
+      const byProduct: Record<string, { name: string; revenue: number; cost: number; qty: number }> = {};
+      let totalRevenue = 0;
+      let totalCOGS = 0;
+
+      matched.forEach((li) => {
+        const f = li.fields;
+        const qty = (f.quantity as number) || 0;
+        const lineTotal = (f.line_total as number) || 0;
+        const costArr = f.product_cost_lookup as number[];
+        const nameArr = f.product_name_lookup as string[];
+        const unitCost = Array.isArray(costArr) && costArr.length > 0 ? costArr[0] : 0;
+        const name = Array.isArray(nameArr) && nameArr.length > 0 ? nameArr[0] : "ไม่ระบุ";
+
+        const lineCost = unitCost * qty;
+        totalRevenue += lineTotal;
+        totalCOGS += lineCost;
+
+        if (!byProduct[name]) byProduct[name] = { name, revenue: 0, cost: 0, qty: 0 };
+        byProduct[name].revenue += lineTotal;
+        byProduct[name].cost += lineCost;
+        byProduct[name].qty += qty;
+      });
+
+      const grossProfit = totalRevenue - totalCOGS;
+      const marginPercent = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0;
+
+      const productMargins = Object.values(byProduct)
+        .map((p) => ({
+          name: p.name,
+          revenue: Math.round(p.revenue),
+          cost: Math.round(p.cost),
+          profit: Math.round(p.revenue - p.cost),
+          margin: p.revenue > 0 ? Math.round(((p.revenue - p.cost) / p.revenue) * 100) : 0,
+          quantity: p.qty,
+        }))
+        .sort((a, b) => b.profit - a.profit);
+
+      return {
+        period,
+        startDate: start,
+        endDate: end,
+        totalRevenue: Math.round(totalRevenue),
+        totalCOGS: Math.round(totalCOGS),
+        grossProfit: Math.round(grossProfit),
+        marginPercent,
+        itemCount: matched.length,
+        isPartial: lineItems.length >= 500,
+        topMarginProducts: productMargins.slice(0, 5),
+        worstMarginProducts: productMargins.slice(-5).reverse(),
+      };
+    },
+  }),
+
+  get_slow_movers: tool({
+    description:
+      "สินค้าค้างสต็อก — สินค้าที่มีสต็อกแต่ไม่ขายมานาน (Products with stock but low/no recent sales)",
+    parameters: z.object({
+      min_stock: z.number().optional().describe("สต็อกขั้นต่ำ (default: 1)"),
+      limit: z.number().optional().describe("จำนวนรายการ (default: 20)"),
+    }),
+    execute: async ({ min_stock, limit }) => {
+      const minStk = min_stock ?? 1;
+      const maxItems = limit ?? 20;
+
+      const products = await selectRecords(TABLES.PRODUCTS, {
+        filterByFormula: `AND({current_stock} >= ${minStk}, {category} != 'ค่าแรง (Labor & Services)')`,
+        fields: [
+          "sku",
+          "display_name",
+          "current_stock",
+          "last_known_cost_baht",
+          "last_known_sell_price_baht",
+          "category",
+          "total_units_sold",
+          "stock_value_cost",
+        ],
+        sort: [{ field: "total_units_sold", direction: "asc" }],
+      });
+
+      const slowMovers = products
+        .filter((p) => ((p.fields.total_units_sold as number) || 0) <= 2)
+        .slice(0, maxItems);
+
+      const totalCapitalTiedUp = slowMovers.reduce(
+        (sum, p) => sum + ((p.fields.stock_value_cost as number) || 0),
+        0
+      );
+
+      return {
+        count: slowMovers.length,
+        totalCapitalTiedUp: Math.round(totalCapitalTiedUp),
+        products: slowMovers.map((p) => ({
+          sku: (p.fields.sku as string) || "",
+          name: (p.fields.display_name as string) || "",
+          stock: (p.fields.current_stock as number) || 0,
+          cost: (p.fields.last_known_cost_baht as number) || 0,
+          sellPrice: (p.fields.last_known_sell_price_baht as number) || 0,
+          unitsSold: (p.fields.total_units_sold as number) || 0,
+          capitalTiedUp: Math.round((p.fields.stock_value_cost as number) || 0),
+          category: (p.fields.category as string) || "",
+        })),
+      };
+    },
+  }),
+
+  get_top_sellers: tool({
+    description:
+      "สินค้าขายดี — อันดับสินค้าตามยอดขายหรือรายได้ (Top selling products by quantity or revenue)",
+    parameters: z.object({
+      period: z.enum(["week", "month", "last_month", "all_time", "custom"]).describe("ช่วงเวลา"),
+      start_date: z.string().optional().describe("วันเริ่มต้น YYYY-MM-DD"),
+      end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD"),
+      metric: z.enum(["quantity", "revenue"]).optional().describe("เรียงตาม (default: revenue)"),
+      limit: z.number().optional().describe("จำนวนอันดับ (default: 10)"),
+    }),
+    execute: async ({ period, start_date, end_date, metric, limit }) => {
+      const sortMetric = metric || "revenue";
+      const maxItems = limit || 10;
+
+      if (period === "all_time") {
+        const sortField = sortMetric === "quantity" ? "total_units_sold" : "total_revenue";
+        const products = await selectRecords(TABLES.PRODUCTS, {
+          filterByFormula: `{total_units_sold} > 0`,
+          fields: ["sku", "display_name", "total_units_sold", "total_revenue", "current_stock", "category"],
+          sort: [{ field: sortField, direction: "desc" }],
+          maxRecords: maxItems,
+        });
+
+        return {
+          period: "all_time",
+          metric: sortMetric,
+          limit: maxItems,
+          products: products.map((p, i) => ({
+            rank: i + 1,
+            name: (p.fields.display_name as string) || "",
+            sku: (p.fields.sku as string) || "",
+            totalQuantity: (p.fields.total_units_sold as number) || 0,
+            totalRevenue: (p.fields.total_revenue as number) || 0,
+            currentStock: (p.fields.current_stock as number) || 0,
+            category: (p.fields.category as string) || "",
+          })),
+        };
+      }
+
+      const { start, end } = getDateRange(period, start_date, end_date);
+
+      const sales = await selectRecords(TABLES.SALES, {
+        filterByFormula: buildDateFilter("sale_date", start, end),
+        fields: ["sale_id"],
+      });
+
+      if (sales.length === 0) {
+        return { period, startDate: start, endDate: end, metric: sortMetric, limit: maxItems, products: [] };
+      }
+
+      const saleRecordIds = new Set(sales.map((s) => s.id));
+
+      const lineItems = await selectRecords("Sale Line Items", {
+        fields: ["sale_id", "quantity", "line_total", "product_name_lookup"],
+        maxRecords: 500,
+      });
+
+      const matched = lineItems.filter((li) => {
+        const saleIds = (li.fields.sale_id as string[]) || [];
+        return saleIds.some((id) => saleRecordIds.has(id));
+      });
+
+      const byProduct: Record<string, { name: string; qty: number; revenue: number }> = {};
+      matched.forEach((li) => {
+        const f = li.fields;
+        const nameArr = f.product_name_lookup as string[];
+        const name = Array.isArray(nameArr) && nameArr.length > 0 ? nameArr[0] : "ไม่ระบุ";
+        const qty = (f.quantity as number) || 0;
+        const revenue = (f.line_total as number) || 0;
+
+        if (!byProduct[name]) byProduct[name] = { name, qty: 0, revenue: 0 };
+        byProduct[name].qty += qty;
+        byProduct[name].revenue += revenue;
+      });
+
+      const sorted = Object.values(byProduct)
+        .sort((a, b) => (sortMetric === "quantity" ? b.qty - a.qty : b.revenue - a.revenue))
+        .slice(0, maxItems);
+
+      return {
+        period,
+        startDate: start,
+        endDate: end,
+        metric: sortMetric,
+        limit: maxItems,
+        products: sorted.map((p, i) => ({
+          rank: i + 1,
+          name: p.name,
+          totalQuantity: p.qty,
+          totalRevenue: Math.round(p.revenue),
+        })),
+      };
+    },
+  }),
+
+  get_cash_flow_summary: tool({
+    description:
+      "สรุปกระแสเงินสด — รายได้, ค่าใช้จ่าย, ยอดซื้อ, เงินเบิก, กระแสเงินสดสุทธิ (Cash flow overview)",
+    parameters: z.object({
+      period: z.enum(["today", "week", "month", "last_month", "custom"]).describe("ช่วงเวลา"),
+      start_date: z.string().optional().describe("วันเริ่มต้น YYYY-MM-DD"),
+      end_date: z.string().optional().describe("วันสิ้นสุด YYYY-MM-DD"),
+    }),
+    execute: async ({ period, start_date, end_date }) => {
+      const { start, end } = getDateRange(period, start_date, end_date);
+
+      const [sales, purchases, expenses, draws] = await Promise.all([
+        selectRecords(TABLES.SALES, {
+          filterByFormula: buildDateFilter("sale_date", start, end),
+          fields: ["total", "total_collected", "payment_method"],
+        }),
+        selectRecords(TABLES.PURCHASES, {
+          filterByFormula: buildDateFilter("purchase_date", start, end),
+          fields: ["total_paid", "shipping_cost", "payment_method"],
+        }),
+        selectRecords(TABLES.EXPENSES, {
+          filterByFormula: buildDateFilter("expense_date", start, end),
+          fields: ["amount", "category", "payment_method"],
+        }),
+        selectRecords(TABLES.DAILY_PERSON_DRAWS, {
+          filterByFormula: buildDateFilter("date", start, end),
+          fields: ["person", "salary", "food", "other", "total"],
+        }),
+      ]);
+
+      let totalRevenue = 0;
+      let cashSales = 0;
+      let transferSales = 0;
+      let creditSales = 0;
+
+      sales.forEach((s) => {
+        const collected = (s.fields.total_collected as number) || (s.fields.total as number) || 0;
+        const pm = ((s.fields.payment_method as string) || "").toLowerCase();
+        totalRevenue += collected;
+        if (pm.includes("เงินสด")) cashSales += collected;
+        else if (pm.includes("โอน")) transferSales += collected;
+        else if (pm.includes("เครดิต")) creditSales += collected;
+      });
+
+      const totalPurchases = purchases.reduce(
+        (sum, p) => sum + ((p.fields.total_paid as number) || 0),
+        0
+      );
+
+      const expenseByCategory: Record<string, number> = {};
+      let totalExpenses = 0;
+      expenses.forEach((e) => {
+        const amount = (e.fields.amount as number) || 0;
+        const cat = (e.fields.category as string) || "อื่นๆ";
+        totalExpenses += amount;
+        expenseByCategory[cat] = (expenseByCategory[cat] || 0) + amount;
+      });
+
+      const totalDraws = draws.reduce(
+        (sum, d) => sum + ((d.fields.total as number) || 0),
+        0
+      );
+
+      const totalCashIn = totalRevenue;
+      const totalCashOut = totalPurchases + totalExpenses + totalDraws;
+      const netCashFlow = totalCashIn - totalCashOut;
+
+      return {
+        period,
+        startDate: start,
+        endDate: end,
+        revenue: {
+          total: Math.round(totalRevenue),
+          cash: Math.round(cashSales),
+          transfer: Math.round(transferSales),
+          credit: Math.round(creditSales),
+          salesCount: sales.length,
+        },
+        expenses: {
+          total: Math.round(totalExpenses),
+          byCategory: expenseByCategory,
+          count: expenses.length,
+        },
+        purchases: {
+          total: Math.round(totalPurchases),
+          count: purchases.length,
+        },
+        draws: {
+          total: Math.round(totalDraws),
+          count: draws.length,
+        },
+        cashFlow: {
+          totalIn: Math.round(totalCashIn),
+          totalOut: Math.round(totalCashOut),
+          net: Math.round(netCashFlow),
+        },
+      };
     },
   }),
 };

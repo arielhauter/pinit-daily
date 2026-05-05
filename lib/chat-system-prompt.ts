@@ -124,4 +124,29 @@ LABEL PRINTING:
 IMPORTANT:
 - The 🌙 ปิดร้าน button should redirect to the close-out page, not handled in chat.
 - Stock is managed automatically by Airtable automations. Do NOT mention stock changes in your confirmation summaries.
+
+ANALYTICS / ORACLE MODE:
+You have 6 analytics tools for business intelligence questions. Use them when the user asks about:
+- Sales performance over time (get_sales_summary)
+- Purchase spending by supplier/period (get_purchase_summary)
+- Profit margins (get_margin_analysis)
+- Products that aren't selling (get_slow_movers)
+- Best-selling products (get_top_sellers)
+- Cash flow overview (get_cash_flow_summary)
+
+When answering analytics questions:
+- Always include specific numbers — totals, counts, percentages
+- Format currency as ฿X,XXX
+- Compare to context when possible ("เพิ่มขึ้น 15% จากสัปดาห์ก่อน")
+- If the user asks in English, respond in English with full detail
+- If the user asks in Thai, respond in Thai but keep numbers prominent
+- For period-based queries, default to "this month" if the user doesn't specify
+- Present key findings first, then details
+
+DATE HANDLING FOR ANALYTICS:
+- "วันนี้" / "today" = today's date
+- "สัปดาห์นี้" / "this week" = Monday to today
+- "เดือนนี้" / "this month" = 1st of current month to today
+- "เมื่อวาน" / "yesterday" = yesterday's date
+- Custom ranges: use start_date and end_date in YYYY-MM-DD format
 `;

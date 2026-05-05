@@ -373,6 +373,205 @@ function RepairStatusConfirmationCard({ data }: { data: {
   );
 }
 
+const PERIOD_LABELS: Record<string, string> = {
+  today: "วันนี้",
+  yesterday: "เมื่อวาน",
+  week: "สัปดาห์นี้",
+  last_week: "สัปดาห์ที่แล้ว",
+  month: "เดือนนี้",
+  last_month: "เดือนที่แล้ว",
+  all_time: "ทั้งหมด",
+  custom: "กำหนดเอง",
+};
+
+function pLabel(period: string, startDate?: string, endDate?: string): string {
+  if (period === "custom" && startDate && endDate) return `${startDate} — ${endDate}`;
+  return PERIOD_LABELS[period] || period;
+}
+
+function SalesSummaryPeriodCard({ data }: { data: {
+  period: string; startDate: string; endDate: string;
+  count: number; totalCollected: number; averageSale: number;
+  byPaymentMethod: Record<string, { count: number; total: number }>;
+} }) {
+  return (
+    <div className="bg-slate-800 border-l-4 border-green-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">📊 สรุปยอดขาย — {pLabel(data.period, data.startDate, data.endDate)}</div>
+      <div className="text-sm text-slate-300 mt-2">จำนวน: {data.count} รายการ</div>
+      <div className="text-sm text-slate-100 font-medium">รวม: {formatBaht(data.totalCollected)}</div>
+      <div className="text-xs text-slate-400">เฉลี่ย: {formatBaht(data.averageSale)}/รายการ</div>
+      {Object.keys(data.byPaymentMethod).length > 0 && (
+        <div className="mt-2 space-y-1">
+          {Object.entries(data.byPaymentMethod).map(([method, info]) => {
+            const pct = data.totalCollected > 0 ? Math.round((info.total / data.totalCollected) * 100) : 0;
+            return (
+              <div key={method} className="text-xs text-slate-400">
+                {method}: {formatBaht(info.total)} ({pct}%)
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PurchaseSummaryPeriodCard({ data }: { data: {
+  period: string; startDate: string; endDate: string;
+  count: number; totalSpent: number; totalShipping: number;
+  bySupplier: Record<string, { count: number; total: number }>;
+} }) {
+  return (
+    <div className="bg-slate-800 border-l-4 border-blue-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">📘 สรุปยอดซื้อ — {pLabel(data.period, data.startDate, data.endDate)}</div>
+      <div className="text-sm text-slate-300 mt-2">จำนวน: {data.count} รายการ</div>
+      <div className="text-sm text-slate-100 font-medium">รวม: {formatBaht(data.totalSpent)}</div>
+      {data.totalShipping > 0 && (
+        <div className="text-xs text-slate-400">ค่าจัดส่ง: {formatBaht(data.totalShipping)}</div>
+      )}
+      {Object.keys(data.bySupplier).length > 0 && (
+        <div className="mt-2 space-y-1">
+          <div className="text-xs text-slate-500">แยกตามผู้จำหน่าย:</div>
+          {Object.entries(data.bySupplier)
+            .sort(([, a], [, b]) => b.total - a.total)
+            .map(([supplier, info]) => (
+              <div key={supplier} className="text-xs text-slate-400">
+                {supplier}: {info.count} ครั้ง ({formatBaht(info.total)})
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MarginAnalysisCard({ data }: { data: {
+  period: string; startDate: string; endDate: string;
+  totalRevenue: number; totalCOGS: number; grossProfit: number; marginPercent: number;
+  itemCount: number; isPartial?: boolean;
+  topMarginProducts: Array<{ name: string; profit: number; margin: number; quantity: number }>;
+  worstMarginProducts: Array<{ name: string; profit: number; margin: number; quantity: number }>;
+} }) {
+  const profitColor = data.grossProfit >= 0 ? "text-green-300" : "text-red-300";
+  return (
+    <div className="bg-slate-800 border-l-4 border-amber-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">📈 วิเคราะห์กำไร — {pLabel(data.period, data.startDate, data.endDate)}</div>
+      <div className="text-sm text-slate-300 mt-2">รายได้: {formatBaht(data.totalRevenue)}</div>
+      <div className="text-sm text-slate-300">ต้นทุน: {formatBaht(data.totalCOGS)}</div>
+      <div className={`text-sm font-medium ${profitColor}`}>
+        กำไรขั้นต้น: {formatBaht(data.grossProfit)} ({data.marginPercent}%)
+      </div>
+      <div className="text-xs text-slate-400 mt-1">
+        {data.itemCount} รายการ{data.isPartial ? " (ข้อมูลบางส่วน)" : ""}
+      </div>
+      {data.topMarginProducts.length > 0 && (
+        <div className="mt-2">
+          <div className="text-xs text-slate-500">กำไรสูงสุด:</div>
+          {data.topMarginProducts.slice(0, 3).map((p, i) => (
+            <div key={i} className="text-xs text-slate-400">
+              {i + 1}. {p.name} — {formatBaht(p.profit)} ({p.margin}%)
+            </div>
+          ))}
+        </div>
+      )}
+      {data.worstMarginProducts.length > 0 && (
+        <div className="mt-2">
+          <div className="text-xs text-slate-500">กำไรต่ำสุด:</div>
+          {data.worstMarginProducts.slice(0, 3).map((p, i) => (
+            <div key={i} className="text-xs text-orange-400">
+              {i + 1}. {p.name} — {formatBaht(p.profit)} ({p.margin}%)
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SlowMoversCard({ data }: { data: {
+  count: number; totalCapitalTiedUp: number;
+  products: Array<{ name: string; stock: number; unitsSold: number; capitalTiedUp: number }>;
+} }) {
+  return (
+    <div className="bg-slate-800 border-l-4 border-red-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">📦 สินค้าค้างสต็อก</div>
+      <div className="text-sm text-slate-300 mt-2">{data.count} รายการ</div>
+      <div className="text-sm text-red-300">ทุนจม: {formatBaht(data.totalCapitalTiedUp)}</div>
+      {data.products.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {data.products.slice(0, 10).map((p, i) => (
+            <div key={i} className="text-xs text-slate-400">
+              {p.name} — สต็อก: {p.stock} | ขายแล้ว: {p.unitsSold} | ทุน: {formatBaht(p.capitalTiedUp)}
+            </div>
+          ))}
+          {data.products.length > 10 && (
+            <div className="text-xs text-slate-500">...และอีก {data.products.length - 10} รายการ</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TopSellersCard({ data }: { data: {
+  period: string; startDate?: string; endDate?: string;
+  metric: string;
+  products: Array<{ rank: number; name: string; totalQuantity: number; totalRevenue: number }>;
+} }) {
+  return (
+    <div className="bg-slate-800 border-l-4 border-yellow-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">🏆 สินค้าขายดี — {pLabel(data.period, data.startDate, data.endDate)}</div>
+      {data.products.length === 0 ? (
+        <div className="text-sm text-slate-400 mt-2">ไม่มีข้อมูลในช่วงนี้</div>
+      ) : (
+        <div className="mt-2 space-y-1">
+          {data.products.map((p) => (
+            <div key={p.rank} className="text-xs text-slate-300">
+              <span className="text-yellow-400">{p.rank}.</span> {p.name} — {p.totalQuantity} ชิ้น {formatBaht(p.totalRevenue)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CashFlowCard({ data }: { data: {
+  period: string; startDate: string; endDate: string;
+  revenue: { total: number; cash: number; transfer: number; credit: number; salesCount: number };
+  expenses: { total: number; byCategory: Record<string, number>; count: number };
+  purchases: { total: number; count: number };
+  draws: { total: number; count: number };
+  cashFlow: { totalIn: number; totalOut: number; net: number };
+} }) {
+  const netColor = data.cashFlow.net >= 0 ? "text-green-300" : "text-red-300";
+  return (
+    <div className="bg-slate-800 border-l-4 border-emerald-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">💰 กระแสเงินสด — {pLabel(data.period, data.startDate, data.endDate)}</div>
+      <div className="mt-2">
+        <div className="text-xs text-slate-500">เงินเข้า:</div>
+        <div className="text-sm text-green-300">ขาย: {formatBaht(data.revenue.total)} ({data.revenue.salesCount} รายการ)</div>
+        {data.revenue.cash > 0 && <div className="text-xs text-slate-400 ml-2">เงินสด: {formatBaht(data.revenue.cash)}</div>}
+        {data.revenue.transfer > 0 && <div className="text-xs text-slate-400 ml-2">โอน: {formatBaht(data.revenue.transfer)}</div>}
+        {data.revenue.credit > 0 && <div className="text-xs text-slate-400 ml-2">เครดิต: {formatBaht(data.revenue.credit)}</div>}
+      </div>
+      <div className="mt-2">
+        <div className="text-xs text-slate-500">เงินออก:</div>
+        <div className="text-sm text-red-300">ซื้อสินค้า: {formatBaht(data.purchases.total)} ({data.purchases.count} ครั้ง)</div>
+        <div className="text-sm text-red-300">ค่าใช้จ่าย: {formatBaht(data.expenses.total)} ({data.expenses.count} รายการ)</div>
+        {data.draws.total > 0 && (
+          <div className="text-sm text-red-300">เบิก: {formatBaht(data.draws.total)} ({data.draws.count} ครั้ง)</div>
+        )}
+      </div>
+      <div className="mt-2 pt-2 border-t border-slate-700">
+        <div className={`text-sm font-medium ${netColor}`}>
+          กระแสเงินสดสุทธิ: {formatBaht(data.cashFlow.net)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ToolResultCard({ toolName, state, result }: ToolResultCardProps) {
   if (state !== "result") {
     return (
@@ -406,6 +605,18 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <LabelCard data={data as Parameters<typeof LabelCard>[0]["data"]} />;
     case "update_stock_count":
       return <StockCountCard data={data as Parameters<typeof StockCountCard>[0]["data"]} />;
+    case "get_sales_summary":
+      return <SalesSummaryPeriodCard data={data as Parameters<typeof SalesSummaryPeriodCard>[0]["data"]} />;
+    case "get_purchase_summary":
+      return <PurchaseSummaryPeriodCard data={data as Parameters<typeof PurchaseSummaryPeriodCard>[0]["data"]} />;
+    case "get_margin_analysis":
+      return <MarginAnalysisCard data={data as Parameters<typeof MarginAnalysisCard>[0]["data"]} />;
+    case "get_slow_movers":
+      return <SlowMoversCard data={data as Parameters<typeof SlowMoversCard>[0]["data"]} />;
+    case "get_top_sellers":
+      return <TopSellersCard data={data as Parameters<typeof TopSellersCard>[0]["data"]} />;
+    case "get_cash_flow_summary":
+      return <CashFlowCard data={data as Parameters<typeof CashFlowCard>[0]["data"]} />;
     default:
       return (
         <pre className="text-xs text-slate-400 overflow-auto">
