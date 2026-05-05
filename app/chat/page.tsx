@@ -51,39 +51,44 @@ export default function ChatPage() {
           </div>
         )}
 
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
-          >
+        {messages.map((m) => {
+          const hasTools = m.toolInvocations && m.toolInvocations.length > 0;
+          return (
             <div
-              className={
-                m.role === "user"
-                  ? "bg-sky-600 text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-[85%]"
-                  : "bg-slate-800 text-slate-100 rounded-2xl rounded-bl-sm px-4 py-2 max-w-[85%]"
-              }
+              key={m.id}
+              className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
             >
-              {m.content && (
-                <p className="whitespace-pre-wrap text-sm">{m.content}</p>
-              )}
-              {m.toolInvocations && m.toolInvocations.length > 0 && (
-                <div className="-mx-2 mt-2">
-                  {m.toolInvocations.map((invocation) => (
-                    <ToolResultCard
-                      key={invocation.toolCallId}
-                      toolName={invocation.toolName}
-                      state={invocation.state}
-                      result={
-                        invocation.state === "result" ? invocation.result : undefined
-                      }
-                      onAction={(message) => append({ role: "user", content: message })}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="max-w-[85%]">
+                {m.content && (
+                  <div
+                    className={
+                      m.role === "user"
+                        ? "bg-sky-600 text-white rounded-2xl rounded-br-sm px-4 py-2"
+                        : "bg-slate-800 text-slate-100 rounded-2xl rounded-bl-sm px-4 py-2"
+                    }
+                  >
+                    <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                  </div>
+                )}
+                {hasTools && (
+                  <div className="mt-2 space-y-1">
+                    {m.toolInvocations!.map((invocation) => (
+                      <ToolResultCard
+                        key={invocation.toolCallId}
+                        toolName={invocation.toolName}
+                        state={invocation.state}
+                        result={
+                          invocation.state === "result" ? invocation.result : undefined
+                        }
+                        onAction={(message) => append({ role: "user", content: message })}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex justify-start">
