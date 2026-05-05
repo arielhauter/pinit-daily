@@ -14,6 +14,20 @@ export default function ChatPage() {
     useChat({ api: "/api/chat" });
 
   useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-card-action]')) {
+        const message = target.closest('[data-card-action]')?.getAttribute('data-card-action');
+        if (message) {
+          alert('Global click: ' + message);
+        }
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 

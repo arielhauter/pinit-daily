@@ -27,6 +27,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           key={p.id}
           role="button"
           tabIndex={0}
+          data-card-action={`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`}
           onPointerDown={(e) => {
             e.stopPropagation();
             if (p.stock > 0 && onAction) {
