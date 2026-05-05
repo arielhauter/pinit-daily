@@ -13,22 +13,6 @@ export default function ChatPage() {
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } =
     useChat({ api: "/api/chat" });
 
-  const pendingAction = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!isLoading && pendingAction.current) {
-      append({ role: "user", content: pendingAction.current });
-      pendingAction.current = null;
-    }
-  }, [isLoading, append]);
-
-  const handleCardAction = (message: string) => {
-    alert('About to send: ' + message);
-    setTimeout(() => {
-      append({ role: 'user', content: message });
-    }, 100);
-  };
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -96,7 +80,10 @@ export default function ChatPage() {
                         result={
                           invocation.state === "result" ? invocation.result : undefined
                         }
-                        onAction={handleCardAction}
+                        onAction={(message: string) => {
+                          console.log('onAction fired:', message);
+                          append({ role: 'user', content: message });
+                        }}
                       />
                     ))}
                   </div>
