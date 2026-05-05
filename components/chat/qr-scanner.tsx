@@ -11,46 +11,31 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
   const isMounted = useRef(true);
+  const isRunning = useRef(false);
   const hasScanned = useRef(false);
 
   const onScanSuccess = useCallback((decodedText: string) => {
-    console.log('QR scanned:', decodedText);
-    try {
-      if (hasScanned.current) return;
-      hasScanned.current = true;
+    if (hasScanned.current) return;
+    hasScanned.current = true;
 
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch((err) => {
-          console.error('Scanner stop error:', err);
-        }).finally(() => {
-          if (isMounted.current) {
-            console.log('Calling onScan with:', decodedText);
-            onScan(decodedText);
-          }
-        });
-      } else {
-        if (isMounted.current) {
-          onScan(decodedText);
-        }
-      }
-    } catch (err) {
-      console.error('onScanSuccess error:', err);
-      if (isMounted.current) {
-        onScan(decodedText);
-      }
+    if (scannerRef.current && isRunning.current) {
+      isRunning.current = false;
+      scannerRef.current.stop().catch(() => {});
+    }
+
+    if (isMounted.current) {
+      onScan(decodedText);
     }
   }, [onScan]);
 
   useEffect(() => {
     isMounted.current = true;
-    let scanner: { stop: () => Promise<void> } | null = null;
 
     async function startScanner() {
       const { Html5Qrcode } = await import('html5-qrcode');
       if (!isMounted.current) return;
 
       const qrScanner = new Html5Qrcode('qr-reader');
-      scanner = qrScanner;
       scannerRef.current = qrScanner;
 
       try {
@@ -60,6 +45,7 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
           (decodedText) => onScanSuccess(decodedText),
           () => {}
         );
+        isRunning.current = true;
       } catch (err) {
         if (isMounted.current) {
           setError(
@@ -73,8 +59,9 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
 
     return () => {
       isMounted.current = false;
-      if (scanner) {
-        scanner.stop().catch(() => {});
+      if (scannerRef.current && isRunning.current) {
+        isRunning.current = false;
+        scannerRef.current.stop().catch(() => {});
       }
     };
   }, [onScanSuccess]);
