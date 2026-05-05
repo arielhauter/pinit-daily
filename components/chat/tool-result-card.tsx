@@ -1,7 +1,5 @@
 "use client";
 
-import { useRef } from "react";
-
 interface ToolResultCardProps {
   toolName: string;
   state: string;
@@ -18,8 +16,6 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
   cost: number; sellPrice: number; repairPrice: number | null;
   category: string; photoUrl: string | null;
 }> }; onAction?: (message: string) => void }) {
-  const tapped = useRef(false);
-
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบสินค้า</p>;
   }
@@ -33,9 +29,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            if (tapped.current) return;
             if (p.stock > 0 && onAction) {
-              tapped.current = true;
               onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
           }}
@@ -96,7 +90,6 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
   licensePlate: string; status: string; jobType: string[];
   quotedPrice: number; quotedDate: string;
 }> }; onAction?: (message: string) => void }) {
-  const tapped = useRef(false);
 
   const statusColor: Record<string, string> = {
     "รับงาน (Quoting)": "bg-blue-500",
@@ -124,9 +117,7 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            if (tapped.current) return;
             if (onAction) {
-              tapped.current = true;
               onAction(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
             }
           }}
@@ -162,7 +153,6 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
   id: string; name: string; phone: string | null;
   creditBalance: number; salesCount: number; repairJobsCount: number;
 }> }; onAction?: (message: string) => void }) {
-  const tapped = useRef(false);
 
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบลูกค้า</p>;
@@ -177,9 +167,7 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            if (tapped.current) return;
             if (onAction) {
-              tapped.current = true;
               onAction(`ดูประวัติลูกค้า ${c.name}`);
             }
           }}
@@ -208,7 +196,6 @@ function SaleConfirmationCard({ data, onAction }: { data: {
   items?: Array<{ name: string; quantity: number; unitPrice: number; lineTotal: number }>;
   total?: number; discount?: number; paymentMethod?: string;
 }; onAction?: (message: string) => void }) {
-  const tapped = useRef(false);
 
   if (!data.success) {
     return (
@@ -236,8 +223,6 @@ function SaleConfirmationCard({ data, onAction }: { data: {
         <button
           onPointerDown={(e) => {
             e.stopPropagation();
-            if (tapped.current) return;
-            tapped.current = true;
             onAction("ต้องการบันทึกการขาย");
           }}
           className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full relative z-10 cursor-pointer"
