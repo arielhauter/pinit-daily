@@ -16,16 +16,17 @@ export default function ChatPage() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('[data-card-action]')) {
-        const message = target.closest('[data-card-action]')?.getAttribute('data-card-action');
+      const card = target.closest('[data-card-action]');
+      if (card) {
+        const message = card.getAttribute('data-card-action');
         if (message) {
-          alert('Global click: ' + message);
+          append({ role: 'user', content: message });
         }
       }
     };
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
-  }, []);
+  }, [append]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -94,10 +95,6 @@ export default function ChatPage() {
                         result={
                           invocation.state === "result" ? invocation.result : undefined
                         }
-                        onAction={(message: string) => {
-                          alert('Setting input: ' + message);
-                          handleInputChange({ target: { value: message } } as React.ChangeEvent<HTMLInputElement>);
-                        }}
                       />
                     ))}
                   </div>

@@ -4,18 +4,17 @@ interface ToolResultCardProps {
   toolName: string;
   state: string;
   result?: unknown;
-  onAction?: (message: string) => void;
 }
 
 function formatBaht(n: number): string {
   return `฿${n.toLocaleString()}`;
 }
 
-function ProductCards({ data, onAction }: { data: { found: number; products: Array<{
+function ProductCards({ data }: { data: { found: number; products: Array<{
   id: string; sku: string; name: string; stock: number;
   cost: number; sellPrice: number; repairPrice: number | null;
   category: string; photoUrl: string | null;
-}> }; onAction?: (message: string) => void }) {
+}> } }) {
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบสินค้า</p>;
   }
@@ -28,13 +27,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           role="button"
           tabIndex={0}
           data-card-action={`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            if (p.stock > 0 && onAction) {
-              onAction(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
-            }
-          }}
-          className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 ${p.stock > 0 ? "cursor-pointer active:bg-slate-700" : ""}`}
         >
           <div className="font-medium text-slate-100">📦 {p.name}</div>
           <div className="text-xs text-slate-400 mt-1">SKU: {p.sku}</div>
@@ -50,7 +43,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
               ราคาซ่อม: {formatBaht(p.repairPrice)}
             </div>
           )}
-          {p.stock > 0 && onAction && (
+          {p.stock > 0 && (
             <div className="text-xs text-sky-400 mt-2">แตะเพื่อขาย</div>
           )}
         </div>
@@ -86,11 +79,11 @@ function SalesSummaryCard({ data }: { data: {
   );
 }
 
-function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array<{
+function RepairJobsCard({ data }: { data: { count: number; jobs: Array<{
   id: string; jobId: number; customer: string; vehicleDescription: string;
   licensePlate: string; status: string; jobType: string[];
   quotedPrice: number; quotedDate: string;
-}> }; onAction?: (message: string) => void }) {
+}> } }) {
   const statusColor: Record<string, string> = {
     "รับงาน (Quoting)": "bg-blue-500",
     "กำลังซ่อม (In Progress)": "bg-yellow-500",
@@ -115,13 +108,8 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
           key={job.id}
           role="button"
           tabIndex={0}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            if (onAction) {
-              onAction(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
-            }
-          }}
-          className={`bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          data-card-action={`อัปเดตสถานะงานซ่อม #${job.jobId}`}
+          className="bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 cursor-pointer active:bg-slate-700"
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-100">🔧 #{job.jobId}</span>
@@ -138,7 +126,7 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
           <div className="text-sm text-slate-300 mt-1">
             ราคาเสนอ: {formatBaht(job.quotedPrice)}
           </div>
-          {onAction && nextStatus[job.status] && (
+          {nextStatus[job.status] && (
             <div className="text-xs text-orange-400 mt-2">
               แตะเพื่อเปลี่ยนเป็น {nextStatus[job.status]}
             </div>
@@ -149,10 +137,10 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
   );
 }
 
-function CustomerCards({ data, onAction }: { data: { found: number; customers: Array<{
+function CustomerCards({ data }: { data: { found: number; customers: Array<{
   id: string; name: string; phone: string | null;
   creditBalance: number; salesCount: number; repairJobsCount: number;
-}> }; onAction?: (message: string) => void }) {
+}> } }) {
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบลูกค้า</p>;
   }
@@ -164,13 +152,8 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
           key={c.id}
           role="button"
           tabIndex={0}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            if (onAction) {
-              onAction(`ดูประวัติลูกค้า ${c.name}`);
-            }
-          }}
-          className={`bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          data-card-action={`ดูประวัติลูกค้า ${c.name}`}
+          className="bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 cursor-pointer active:bg-slate-700"
         >
           <div className="font-medium text-slate-100">👤 {c.name}</div>
           {c.phone && (
@@ -190,11 +173,11 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
   );
 }
 
-function SaleConfirmationCard({ data, onAction }: { data: {
+function SaleConfirmationCard({ data }: { data: {
   success: boolean; error?: string; saleNumber?: number;
   items?: Array<{ name: string; quantity: number; unitPrice: number; lineTotal: number }>;
   total?: number; discount?: number; paymentMethod?: string;
-}; onAction?: (message: string) => void }) {
+} }) {
   if (!data.success) {
     return (
       <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
@@ -217,19 +200,12 @@ function SaleConfirmationCard({ data, onAction }: { data: {
       <div className="text-sm text-slate-300 mt-1">
         ชำระ: {data.paymentMethod}
       </div>
-      {onAction && (
-        <button
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            if (onAction) {
-              onAction("ต้องการบันทึกการขาย");
-            }
-          }}
-          className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full relative z-10 cursor-pointer"
-        >
-          📗 ขายต่อ
-        </button>
-      )}
+      <button
+        data-card-action="ต้องการบันทึกการขาย"
+        className="mt-2 text-xs bg-green-800 text-green-200 px-3 py-1 rounded-full cursor-pointer"
+      >
+        📗 ขายต่อ
+      </button>
     </div>
   );
 }
@@ -323,7 +299,7 @@ function RepairStatusConfirmationCard({ data }: { data: {
   );
 }
 
-export function ToolResultCard({ toolName, state, result, onAction }: ToolResultCardProps) {
+export function ToolResultCard({ toolName, state, result }: ToolResultCardProps) {
   if (state !== "result") {
     return (
       <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
@@ -337,15 +313,15 @@ export function ToolResultCard({ toolName, state, result, onAction }: ToolResult
 
   switch (toolName) {
     case "lookup_product":
-      return <ProductCards data={data as Parameters<typeof ProductCards>[0]["data"]} onAction={onAction} />;
+      return <ProductCards data={data as Parameters<typeof ProductCards>[0]["data"]} />;
     case "get_today_sales":
       return <SalesSummaryCard data={data as Parameters<typeof SalesSummaryCard>[0]["data"]} />;
     case "get_repair_jobs":
-      return <RepairJobsCard data={data as Parameters<typeof RepairJobsCard>[0]["data"]} onAction={onAction} />;
+      return <RepairJobsCard data={data as Parameters<typeof RepairJobsCard>[0]["data"]} />;
     case "search_customer":
-      return <CustomerCards data={data as Parameters<typeof CustomerCards>[0]["data"]} onAction={onAction} />;
+      return <CustomerCards data={data as Parameters<typeof CustomerCards>[0]["data"]} />;
     case "create_sale":
-      return <SaleConfirmationCard data={data as Parameters<typeof SaleConfirmationCard>[0]["data"]} onAction={onAction} />;
+      return <SaleConfirmationCard data={data as Parameters<typeof SaleConfirmationCard>[0]["data"]} />;
     case "create_expense":
       return <ExpenseConfirmationCard data={data as Parameters<typeof ExpenseConfirmationCard>[0]["data"]} />;
     case "create_purchase":
