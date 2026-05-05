@@ -5,20 +5,22 @@ interface ToolResultCardProps {
   state: string;
   result?: unknown;
   onAction?: (message: string) => void;
+  disabled?: boolean;
 }
 
 function formatBaht(n: number): string {
   return `฿${n.toLocaleString()}`;
 }
 
-function ProductCards({ data, onAction }: { data: { found: number; products: Array<{
+function ProductCards({ data, onAction, disabled }: { data: { found: number; products: Array<{
   id: string; sku: string; name: string; stock: number;
   cost: number; sellPrice: number; repairPrice: number | null;
   category: string; photoUrl: string | null;
-}> }; onAction?: (message: string) => void }) {
+}> }; onAction?: (message: string) => void; disabled?: boolean }) {
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบสินค้า</p>;
   }
+  const canTap = !disabled && !!onAction;
   return (
     <div className="space-y-2">
       <p className="text-xs text-slate-400">พบ {data.found} รายการ</p>
@@ -29,16 +31,11 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            console.log("onAction is:", typeof onAction);
-            if (onAction) {
-              const msg = `ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`;
-              console.log("Sending:", msg);
-              onAction(msg);
-            } else {
-              alert("ERROR: onAction is undefined");
+            if (canTap && p.stock > 0) {
+              onAction!(`ขายสินค้า ${p.name} (${p.sku}) ราคา ฿${p.sellPrice}`);
             }
           }}
-          className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${p.stock > 0 && onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          className={`bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3 relative z-10 ${canTap && p.stock > 0 ? "cursor-pointer active:bg-slate-700" : ""} ${disabled ? "opacity-60" : ""}`}
         >
           <div className="font-medium text-slate-100">📦 {p.name}</div>
           <div className="text-xs text-slate-400 mt-1">SKU: {p.sku}</div>
@@ -54,7 +51,7 @@ function ProductCards({ data, onAction }: { data: { found: number; products: Arr
               ราคาซ่อม: {formatBaht(p.repairPrice)}
             </div>
           )}
-          {p.stock > 0 && onAction && (
+          {p.stock > 0 && canTap && (
             <div className="text-xs text-sky-400 mt-2">แตะเพื่อขาย</div>
           )}
         </div>
@@ -90,11 +87,12 @@ function SalesSummaryCard({ data }: { data: {
   );
 }
 
-function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array<{
+function RepairJobsCard({ data, onAction, disabled }: { data: { count: number; jobs: Array<{
   id: string; jobId: number; customer: string; vehicleDescription: string;
   licensePlate: string; status: string; jobType: string[];
   quotedPrice: number; quotedDate: string;
-}> }; onAction?: (message: string) => void }) {
+}> }; onAction?: (message: string) => void; disabled?: boolean }) {
+  const canTap = !disabled && !!onAction;
 
   const statusColor: Record<string, string> = {
     "รับงาน (Quoting)": "bg-blue-500",
@@ -122,11 +120,11 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            if (onAction) {
-              onAction(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
+            if (canTap) {
+              onAction!(`อัปเดตสถานะงานซ่อม #${job.jobId}`);
             }
           }}
-          className={`bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          className={`bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3 relative z-10 ${canTap ? "cursor-pointer active:bg-slate-700" : ""} ${disabled ? "opacity-60" : ""}`}
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-100">🔧 #{job.jobId}</span>
@@ -143,7 +141,7 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
           <div className="text-sm text-slate-300 mt-1">
             ราคาเสนอ: {formatBaht(job.quotedPrice)}
           </div>
-          {onAction && nextStatus[job.status] && (
+          {canTap && nextStatus[job.status] && (
             <div className="text-xs text-orange-400 mt-2">
               แตะเพื่อเปลี่ยนเป็น {nextStatus[job.status]}
             </div>
@@ -154,10 +152,11 @@ function RepairJobsCard({ data, onAction }: { data: { count: number; jobs: Array
   );
 }
 
-function CustomerCards({ data, onAction }: { data: { found: number; customers: Array<{
+function CustomerCards({ data, onAction, disabled }: { data: { found: number; customers: Array<{
   id: string; name: string; phone: string | null;
   creditBalance: number; salesCount: number; repairJobsCount: number;
-}> }; onAction?: (message: string) => void }) {
+}> }; onAction?: (message: string) => void; disabled?: boolean }) {
+  const canTap = !disabled && !!onAction;
 
   if (data.found === 0) {
     return <p className="text-slate-400 text-sm">ไม่พบลูกค้า</p>;
@@ -172,11 +171,11 @@ function CustomerCards({ data, onAction }: { data: { found: number; customers: A
           tabIndex={0}
           onPointerDown={(e) => {
             e.stopPropagation();
-            if (onAction) {
-              onAction(`ดูประวัติลูกค้า ${c.name}`);
+            if (canTap) {
+              onAction!(`ดูประวัติลูกค้า ${c.name}`);
             }
           }}
-          className={`bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 relative z-10 ${onAction ? "cursor-pointer active:bg-slate-700" : ""}`}
+          className={`bg-slate-800 border-l-4 border-purple-400 rounded-r-lg p-3 relative z-10 ${canTap ? "cursor-pointer active:bg-slate-700" : ""} ${disabled ? "opacity-60" : ""}`}
         >
           <div className="font-medium text-slate-100">👤 {c.name}</div>
           {c.phone && (
@@ -328,7 +327,7 @@ function RepairStatusConfirmationCard({ data }: { data: {
   );
 }
 
-export function ToolResultCard({ toolName, state, result, onAction }: ToolResultCardProps) {
+export function ToolResultCard({ toolName, state, result, onAction, disabled }: ToolResultCardProps) {
   if (state !== "result") {
     return (
       <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
@@ -342,13 +341,13 @@ export function ToolResultCard({ toolName, state, result, onAction }: ToolResult
 
   switch (toolName) {
     case "lookup_product":
-      return <ProductCards data={data as Parameters<typeof ProductCards>[0]["data"]} onAction={onAction} />;
+      return <ProductCards data={data as Parameters<typeof ProductCards>[0]["data"]} onAction={onAction} disabled={disabled} />;
     case "get_today_sales":
       return <SalesSummaryCard data={data as Parameters<typeof SalesSummaryCard>[0]["data"]} />;
     case "get_repair_jobs":
-      return <RepairJobsCard data={data as Parameters<typeof RepairJobsCard>[0]["data"]} onAction={onAction} />;
+      return <RepairJobsCard data={data as Parameters<typeof RepairJobsCard>[0]["data"]} onAction={onAction} disabled={disabled} />;
     case "search_customer":
-      return <CustomerCards data={data as Parameters<typeof CustomerCards>[0]["data"]} onAction={onAction} />;
+      return <CustomerCards data={data as Parameters<typeof CustomerCards>[0]["data"]} onAction={onAction} disabled={disabled} />;
     case "create_sale":
       return <SaleConfirmationCard data={data as Parameters<typeof SaleConfirmationCard>[0]["data"]} onAction={onAction} />;
     case "create_expense":

@@ -80,10 +80,8 @@ export default function ChatPage() {
                         result={
                           invocation.state === "result" ? invocation.result : undefined
                         }
-                        onAction={(message) => {
-                          console.log("page.tsx onAction fired, isLoading:", isLoading, "message:", message);
-                          append({ role: "user", content: message });
-                        }}
+                        onAction={(message) => append({ role: "user", content: message })}
+                        disabled={isLoading}
                       />
                     ))}
                   </div>
