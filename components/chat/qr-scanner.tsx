@@ -14,21 +14,27 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
   const hasScanned = useRef(false);
 
   const onScanSuccess = useCallback((decodedText: string) => {
-    if (hasScanned.current) return;
-    hasScanned.current = true;
+    console.log('QR scanned:', decodedText);
+    try {
+      if (hasScanned.current) return;
+      hasScanned.current = true;
 
-    const scanner = scannerRef.current;
-    if (scanner) {
-      scanner.stop().then(() => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch((err) => {
+          console.error('Scanner stop error:', err);
+        }).finally(() => {
+          if (isMounted.current) {
+            console.log('Calling onScan with:', decodedText);
+            onScan(decodedText);
+          }
+        });
+      } else {
         if (isMounted.current) {
           onScan(decodedText);
         }
-      }).catch(() => {
-        if (isMounted.current) {
-          onScan(decodedText);
-        }
-      });
-    } else {
+      }
+    } catch (err) {
+      console.error('onScanSuccess error:', err);
       if (isMounted.current) {
         onScan(decodedText);
       }
