@@ -22,13 +22,17 @@ export default function ChatPage() {
       // QR scanner trigger from stock count card
       const scanTrigger = target.closest('[data-scan-trigger]');
       if (scanTrigger) {
+        e.preventDefault();
+        e.stopPropagation();
         setShowScanner(true);
         return;
       }
 
       // Label printing — open URL in new tab
-      const label = target.closest('[data-label-url]');
+      const label = target.closest('[data-label-url]') as HTMLElement | null;
       if (label) {
+        e.preventDefault();
+        e.stopPropagation();
         const url = label.getAttribute('data-label-url');
         if (url) {
           window.open(url, '_blank');
@@ -45,8 +49,8 @@ export default function ChatPage() {
         }
       }
     };
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
   }, [append]);
 
   const handleQrScan = (value: string) => {

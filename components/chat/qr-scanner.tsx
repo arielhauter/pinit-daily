@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface QrScannerProps {
   onScan: (value: string) => void;
@@ -9,31 +9,53 @@ interface QrScannerProps {
 
 export function QrScanner({ onScan, onClose }: QrScannerProps) {
   const [error, setError] = useState<string | null>(null);
-  const scannerRef = useRef<unknown>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
+  const isMounted = useRef(true);
+  const hasScanned = useRef(false);
+
+  const onScanSuccess = useCallback((decodedText: string) => {
+    if (hasScanned.current) return;
+    hasScanned.current = true;
+
+    const scanner = scannerRef.current;
+    if (scanner) {
+      scanner.stop().then(() => {
+        if (isMounted.current) {
+          onScan(decodedText);
+        }
+      }).catch(() => {
+        if (isMounted.current) {
+          onScan(decodedText);
+        }
+      });
+    } else {
+      if (isMounted.current) {
+        onScan(decodedText);
+      }
+    }
+  }, [onScan]);
 
   useEffect(() => {
-    let stopped = false;
+    isMounted.current = true;
+    let scanner: { stop: () => Promise<void> } | null = null;
 
     async function startScanner() {
       const { Html5Qrcode } = await import('html5-qrcode');
-      if (stopped) return;
+      if (!isMounted.current) return;
 
-      const scanner = new Html5Qrcode('qr-reader');
-      scannerRef.current = scanner;
+      const qrScanner = new Html5Qrcode('qr-reader');
+      scanner = qrScanner;
+      scannerRef.current = qrScanner;
 
       try {
-        await scanner.start(
+        await qrScanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            scanner.stop().catch(() => {});
-            onScan(decodedText);
-          },
+          (decodedText) => onScanSuccess(decodedText),
           () => {}
         );
       } catch (err) {
-        if (!stopped) {
+        if (isMounted.current) {
           setError(
             err instanceof Error ? err.message : 'ไม่สามารถเปิดกล้องได้'
           );
@@ -44,13 +66,12 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
     startScanner();
 
     return () => {
-      stopped = true;
-      const scanner = scannerRef.current as { stop: () => Promise<void> } | null;
+      isMounted.current = false;
       if (scanner) {
         scanner.stop().catch(() => {});
       }
     };
-  }, [onScan]);
+  }, [onScanSuccess]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center">
@@ -64,7 +85,6 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
       <div className="text-white text-sm mb-4">สแกน QR Code สินค้า</div>
 
       <div
-        ref={containerRef}
         id="qr-reader"
         className="w-[300px] h-[300px] rounded-lg overflow-hidden"
       />
