@@ -1841,6 +1841,7 @@ Warn "ลบแล้วกู้คืนไม่ได้". For Sales: warn s
   confirm_receiving: tool({
     description:
       `ยืนยันรับสินค้า — is_received triggers Automation 6 (stock increment + timestamp). IMPORTANT: Always confirm before calling.
+SAFETY: If more than 10 pending items, do NOT call immediately. Ask: "มี X รายการ — แน่ใจว่าจะรับทั้งหมดไหมคะ? หรือต้องการกรองตามผู้จำหน่ายก่อน?" and offer get_pending_receiving with supplier_name filter.
 After confirming: offer label printing. If items remain pending, mention count. For partial receipt: use quantity_adjustments. DO NOT manually increment stock.`,
     parameters: z.object({
       line_item_ids: z.array(z.string()).describe("Airtable record IDs ของ Purchase Line Items ที่จะรับ"),

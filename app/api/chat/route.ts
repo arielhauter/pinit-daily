@@ -33,14 +33,16 @@ function selectModel(messages: any[], oracleMode: boolean): string {
     /^(pd69|สแกนได้)/i,
     /^[0-9]{3,}$/,
     /^(ค้นหา|หา|ดู|เช็ค)\s/,
-    /^(ใช่|ตกลง|ยืนยัน|yes|ok|ข้าม|ไม่|ยกเลิก|no)$/i,
-    /^[0-9]+$/,
     /^พิมพ์ฉลาก/,
     /^สแกน/,
   ];
 
   for (const pattern of complexPatterns) {
     if (pattern.test(content)) return "claude-sonnet-4-6";
+  }
+
+  if (content.length < 5 || /^[\p{Emoji}\s]+$/u.test(content)) {
+    return "claude-sonnet-4-6";
   }
 
   for (const pattern of simplePatterns) {
