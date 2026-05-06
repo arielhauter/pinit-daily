@@ -41,7 +41,7 @@ function selectModel(messages: any[], oracleMode: boolean): string {
     if (pattern.test(content)) return "claude-sonnet-4-6";
   }
 
-  if (content.length < 5 || /^[\p{Emoji}\s]+$/u.test(content)) {
+  if (content.length < 5 || !/[a-zA-Z฀-๿]/.test(content)) {
     return "claude-sonnet-4-6";
   }
 
