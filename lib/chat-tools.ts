@@ -425,7 +425,12 @@ export const chatTools = {
 
   create_sale: tool({
     description:
-      "บันทึกการขาย — สร้างรายการขายใหม่พร้อมรายการสินค้า (Create a sale with line items). IMPORTANT: Always confirm with user before calling this tool.",
+      `บันทึกการขาย — สร้างรายการขายใหม่พร้อมรายการสินค้า (Create a sale with line items). IMPORTANT: Always confirm with user before calling.
+REQUIRED: product(s)+quantity, payment_method (เงินสด/โอน/เครดิต — always ask), transaction_type (Product Sale or Simple Repair).
+CONDITIONALLY REQUIRED: customer — REQUIRED if เครดิต. For cash/transfer gently ask once "(ข้ามได้)".
+For Simple Repair: use repair_price_total instead of sell price, always ask customer name.
+SPEED MODE: If user types "หัวเทียน 2 สด" parse all fields and go straight to confirmation.
+After multi-item: always ask "เพิ่มสินค้าอีกไหมคะ? หรือชำระเลย?" before payment.`,
     parameters: z.object({
       transaction_type: z
         .enum(["Product Sale", "Simple Repair"])
@@ -543,7 +548,9 @@ export const chatTools = {
 
   create_expense: tool({
     description:
-      "บันทึกค่าใช้จ่าย (Create an expense record). IMPORTANT: Always confirm with user before calling.",
+      `บันทึกค่าใช้จ่าย (Create an expense record). IMPORTANT: Always confirm with user before calling.
+REQUIRED: category, amount, payment_method (เงินสด/โอน), description. OPTIONAL: expense_date (default today), note.
+SPEED: Simplest flow — aim for 4 exchanges max. "จ่ายค่าน้ำมัน 200 สด" → parse and confirm in one step.`,
     parameters: z.object({
       expense_date: z.string().optional().describe("วันที่ (YYYY-MM-DD) ถ้าไม่ระบุใช้วันนี้"),
       category: z.string().describe("หมวดหมู่ค่าใช้จ่าย"),
@@ -590,7 +597,9 @@ export const chatTools = {
 
   create_purchase: tool({
     description:
-      "บันทึกการซื้อสินค้า (Create a purchase record with line items). IMPORTANT: Always confirm with user before calling.",
+      `บันทึกการซื้อสินค้า (Create a purchase record with line items). IMPORTANT: Always confirm with user before calling.
+REQUIRED: supplier_name, payment_method (เงินสด/โอน/บัตรเครดิต/Shopee), items (product+qty+unit_cost), total_paid.
+OPTIONAL: shipping_cost, note.`,
     parameters: z.object({
       supplier_name: z.string().describe("ชื่อผู้จำหน่าย"),
       supplier_record_id: z.string().optional().describe("Airtable record ID ของผู้จำหน่าย (ถ้าค้นเจอแล้ว)"),
@@ -731,7 +740,8 @@ export const chatTools = {
 
   update_stock_count: tool({
     description:
-      "อัปเดตจำนวนสต็อกจากการนับจริง (Update product stock from physical count). Sets current_stock, has_been_counted, counted_date, and counted_by. IMPORTANT: Always confirm with user before calling.",
+      `อัปเดตจำนวนสต็อกจากการนับจริง (Update product stock from physical count). IMPORTANT: Always confirm with user before calling.
+Flow: lookup_product → ask "นับได้กี่ชิ้น?" → show difference (ขาด/เกิน/ตรง) → confirm → update. After: offer "สแกนต่อ 📷" or "พิมพ์ฉลาก 🏷".`,
     parameters: z.object({
       product_record_id: z.string().describe("Airtable record ID ของสินค้า"),
       new_count: z.number().describe("จำนวนที่นับได้"),
@@ -769,7 +779,11 @@ export const chatTools = {
 
   update_repair_status: tool({
     description:
-      "อัปเดตสถานะงานซ่อม (Update repair job status). Valid transitions: รับงาน→กำลังซ่อม→เสร็จแล้ว→จ่ายแล้ว. IMPORTANT: Always confirm with user before calling.",
+      `อัปเดตสถานะงานซ่อม (Update repair job status). IMPORTANT: Always confirm with user before calling.
+Valid transitions: รับงาน→กำลังซ่อม, กำลังซ่อม→เสร็จแล้ว, เสร็จแล้ว→จ่ายแล้ว.
+รับงาน→กำลังซ่อม: no extra fields needed. After update, offer to print work order.
+กำลังซ่อม→เสร็จแล้ว: prefer work order photo extraction. Or manual: ask actual_hours, parts changes, notes, advice.
+เสร็จแล้ว→จ่ายแล้ว: REQUIRED payment_method + total_collected.`,
     parameters: z.object({
       job_record_id: z.string().describe("Airtable record ID ของงานซ่อม (ได้จาก get_repair_jobs)"),
       new_status: z.string().describe("สถานะใหม่"),
@@ -851,7 +865,8 @@ export const chatTools = {
 
   get_sales_summary: tool({
     description:
-      "สรุปยอดขายตามช่วงเวลา — รายได้, จำนวน, แยกตามวิธีชำระและประเภท (Sales summary by period)",
+      `สรุปยอดขายตามช่วงเวลา — รายได้, จำนวน, แยกตามวิธีชำระและประเภท (Sales summary by period).
+Default to "month" if user doesn't specify. Periods: today, yesterday, week, last_week, month, last_month, custom.`,
     parameters: z.object({
       period: z.enum(["today", "yesterday", "week", "last_week", "month", "last_month", "custom"]).describe("ช่วงเวลา"),
       start_date: z.string().optional().describe("วันเริ่มต้น YYYY-MM-DD (สำหรับ custom)"),
@@ -1485,7 +1500,11 @@ export const chatTools = {
 
   create_repair_job: tool({
     description:
-      "สร้างงานซ่อมใหม่ — บันทึกข้อมูลลูกค้า, รถ, ประเภทงาน, เสนอราคา (Create a new specialized repair job with customer, vehicle, job type, parts, and quoted price). IMPORTANT: Always confirm with user before calling.",
+      `สร้างงานซ่อมใหม่ — บันทึกข้อมูลลูกค้า, รถ, ประเภทงาน, เสนอราคา (Create a new specialized repair job). IMPORTANT: Always confirm with user before calling.
+REQUIRED: customer_name, vehicle_description, job_type (array), effort_tier (Tier 1-5), estimated_hours, parts, labor_charge, quoted_price. OPTIONAL: license_plate, notes.
+Guided steps: 1.Customer 2.Vehicle+plate 3.Job type(s) 4.Effort tier 5.Hours 6.Parts 7.Labor 8.Quoted price 9.Confirm.
+Show suggested total before quoting. After creation offer to change status to กำลังซ่อม if customer approved.
+Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกติ ฿160/h, Tier 3 งานฝีมือ ฿200/h, Tier 4 งานซับซ้อน ฿240/h, Tier 5 งานใหญ่ ฿280/h.`,
     parameters: z.object({
       customer_name: z.string().describe("ชื่อลูกค้า"),
       customer_record_id: z.string().optional().describe("Airtable record ID ของลูกค้า (ถ้าค้นหาแล้วเจอ)"),
@@ -1617,7 +1636,7 @@ export const chatTools = {
 
   update_product: tool({
     description:
-      "แก้ไขข้อมูลสินค้า — ราคาขาย, ต้นทุน, ราคาซ่อม, ชื่อ, แสดงราคาซ่อมบนฉลาก (Update product details: sell price, cost, repair price, name, show_repair_on_label)",
+      `แก้ไขข้อมูลสินค้า (Update product details). Always lookup_product first to confirm. Show current vs proposed values before confirming. After updating price, ask "พิมพ์ฉลากใหม่ไหมคะ? 🏷"`,
     parameters: z.object({
       product_record_id: z.string().describe("Airtable record ID ของสินค้า (ได้จาก lookup_product)"),
       sell_price: z.number().optional().describe("ราคาขายใหม่"),
@@ -1664,7 +1683,8 @@ export const chatTools = {
 
   delete_record: tool({
     description:
-      "ลบรายการ — ลบบันทึกการขาย, ค่าใช้จ่าย, หรือการซื้อ (Delete a sale, expense, or purchase record). Only records created today can be deleted. IMPORTANT: Always confirm with user before calling.",
+      `ลบรายการ — ลบการขาย, ค่าใช้จ่าย, หรือการซื้อ (Delete a sale/expense/purchase). Today-only records. IMPORTANT: Always confirm before calling.
+Warn "ลบแล้วกู้คืนไม่ได้". For Sales: warn stock was auto-decremented. For older records: tell user to contact Mint.`,
     parameters: z.object({
       table: z.enum(["Sales", "Expenses", "Purchases"]).describe("ตาราง"),
       record_id: z.string().describe("Airtable record ID ของรายการที่จะลบ"),
@@ -1723,7 +1743,7 @@ export const chatTools = {
 
   get_pending_receiving: tool({
     description:
-      "ดูรายการสินค้ารอรับ — สินค้าที่สั่งซื้อแล้วยังไม่ได้รับ (List purchase line items where is_received is unchecked)",
+      `ดูรายการสินค้ารอรับ (List unchecked purchase line items). Call immediately when user taps 📦 รับของ or says "ของมาแล้ว". If no pending items: suggest creating a purchase first (📘).`,
     parameters: z.object({
       supplier_name: z.string().optional().describe("กรองตามผู้จำหน่าย (ข้ามได้)"),
     }),
@@ -1771,7 +1791,8 @@ export const chatTools = {
 
   confirm_receiving: tool({
     description:
-      "ยืนยันรับสินค้า — ติ๊ก is_received ซึ่งจะเพิ่มสต็อกอัตโนมัติผ่าน Airtable automation (Confirm receipt of purchase line items. Checking is_received triggers Automation 6 which increments stock and timestamps received_at.) IMPORTANT: Always confirm with user before calling.",
+      `ยืนยันรับสินค้า — is_received triggers Automation 6 (stock increment + timestamp). IMPORTANT: Always confirm before calling.
+After confirming: offer label printing. If items remain pending, mention count. For partial receipt: use quantity_adjustments. DO NOT manually increment stock.`,
     parameters: z.object({
       line_item_ids: z.array(z.string()).describe("Airtable record IDs ของ Purchase Line Items ที่จะรับ"),
       quantity_adjustments: z
