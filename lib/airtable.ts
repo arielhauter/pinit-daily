@@ -115,6 +115,16 @@ export async function getRecord(
   return res.json();
 }
 
+export async function deleteRecord(
+  table: string,
+  recordId: string
+): Promise<void> {
+  await airtableFetch(
+    `${encodeURIComponent(table)}/${recordId}`,
+    { method: "DELETE" }
+  );
+}
+
 export async function createRecords(
   table: string,
   records: Record<string, unknown>[]

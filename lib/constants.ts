@@ -1,14 +1,40 @@
 export const TABLES = {
   SALES: "Sales",
+  SALE_LINE_ITEMS: "Sale Line Items",
   PURCHASES: "Purchases",
   PURCHASE_LINE_ITEMS: "Purchase Line Items",
   REPAIR_JOBS: "Repair Jobs",
   REPAIR_JOB_PARTS: "Repair Job Parts",
   EXPENSES: "Expenses",
   PRODUCTS: "Products",
+  CUSTOMERS: "Customers",
+  VEHICLES: "Vehicles",
   DAILY_CASH_RECONCILIATION: "Daily Cash Reconciliation",
   DAILY_PERSON_DRAWS: "Daily Person Draws",
 } as const;
+
+export const EFFORT_TIER_MAP: Record<string, string> = {
+  "1": "Tier 1 — งานเร็ว (Quick)",
+  "tier 1": "Tier 1 — งานเร็ว (Quick)",
+  "quick": "Tier 1 — งานเร็ว (Quick)",
+  "งานเร็ว": "Tier 1 — งานเร็ว (Quick)",
+  "2": "Tier 2 — งานปกติ (Standard)",
+  "tier 2": "Tier 2 — งานปกติ (Standard)",
+  "standard": "Tier 2 — งานปกติ (Standard)",
+  "งานปกติ": "Tier 2 — งานปกติ (Standard)",
+  "3": "Tier 3 — งานฝีมือ (Skilled)",
+  "tier 3": "Tier 3 — งานฝีมือ (Skilled)",
+  "skilled": "Tier 3 — งานฝีมือ (Skilled)",
+  "งานฝีมือ": "Tier 3 — งานฝีมือ (Skilled)",
+  "4": "Tier 4 — งานซับซ้อน (Complex)",
+  "tier 4": "Tier 4 — งานซับซ้อน (Complex)",
+  "complex": "Tier 4 — งานซับซ้อน (Complex)",
+  "งานซับซ้อน": "Tier 4 — งานซับซ้อน (Complex)",
+  "5": "Tier 5 — งานใหญ่ (Major)",
+  "tier 5": "Tier 5 — งานใหญ่ (Major)",
+  "major": "Tier 5 — งานใหญ่ (Major)",
+  "งานใหญ่": "Tier 5 — งานใหญ่ (Major)",
+};
 
 export const PAYMENT_METHODS = {
   CASH: "เงินสด (Cash)",

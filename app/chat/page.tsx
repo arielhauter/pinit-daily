@@ -16,6 +16,7 @@ export default function ChatPage() {
   const [showWorkOrderUpload, setShowWorkOrderUpload] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [oracleMode, setOracleMode] = useState(false);
+  const [showDashboardMenu, setShowDashboardMenu] = useState(false);
   const woCameraRef = useRef<HTMLInputElement>(null);
   const woGalleryRef = useRef<HTMLInputElement>(null);
 
@@ -54,6 +55,11 @@ export default function ChatPage() {
         if (message) {
           append({ role: 'user', content: message });
         }
+        return;
+      }
+
+      if (!target.closest('[data-dashboard-menu]')) {
+        setShowDashboardMenu(false);
       }
     };
     document.addEventListener('click', handler, true);
@@ -146,6 +152,23 @@ export default function ChatPage() {
           >
             🧠 {oracleMode ? 'Oracle ON' : 'Oracle'}
           </button>
+          <div className="relative" data-dashboard-menu>
+            <button
+              onClick={() => setShowDashboardMenu(!showDashboardMenu)}
+              className="text-sm text-slate-400 hover:text-white"
+              title="สถิติ"
+            >
+              📊
+            </button>
+            {showDashboardMenu && (
+              <div className="absolute right-0 top-8 bg-slate-800 rounded-lg shadow-lg z-40 border border-slate-700 py-1 w-48">
+                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagkJuVgkVyoMZBDp" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">📈 ยอดขาย</a>
+                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagRW4wXPtVJwFHmw" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">🔧 งานซ่อม</a>
+                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagNTa1jp1fMdlmqy" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">💸 ค่าใช้จ่าย</a>
+                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pag46ZWMNO49mVK7t" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">📦 มูลค่าสต็อก</a>
+              </div>
+            )}
+          </div>
           <button
             onClick={handleClearChat}
             className="text-sm text-slate-400 hover:text-white"

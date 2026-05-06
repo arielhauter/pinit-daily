@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { selectRecords, createRecord, createRecords, updateRecord, getRecord } from "./airtable";
-import { TABLES } from "./constants";
+import { selectRecords, createRecord, createRecords, updateRecord, getRecord, deleteRecord } from "./airtable";
+import { TABLES, EFFORT_TIER_MAP } from "./constants";
 
 function sanitizeForFormula(input: string): string {
   return input.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -684,8 +684,9 @@ export const chatTools = {
     parameters: z.object({
       sku: z.string().describe("รหัสสินค้า เช่น PD69000071"),
       size: z.enum(["40x20", "40x30", "70x30", "70x50"]).describe("ขนาดฉลาก"),
+      show_repair: z.boolean().optional().describe("แสดงราคาซ่อมบนฉลาก — ถ้าระบุจะอัปเดต show_repair_on_label ในระบบด้วย"),
     }),
-    execute: async ({ sku, size }) => {
+    execute: async ({ sku, size, show_repair }) => {
       try {
         const sanitized = sanitizeForFormula(sku);
         const products = await selectRecords(TABLES.PRODUCTS, {
@@ -699,9 +700,16 @@ export const chatTools = {
         }
 
         const product = products[0].fields;
+        const productId = products[0].id;
+
+        if (show_repair !== undefined && show_repair !== product.show_repair_on_label) {
+          await updateRecord(TABLES.PRODUCTS, productId, { show_repair_on_label: show_repair });
+        }
+
+        const resolvedShowRepair = show_repair !== undefined ? show_repair : !!product.show_repair_on_label;
         const name = encodeURIComponent((product.display_name as string) || "");
         const price = (product.last_known_sell_price_baht as number) || 0;
-        const repair = product.show_repair_on_label ? ((product.repair_price_total as number) || 0) : 0;
+        const repair = resolvedShowRepair ? ((product.repair_price_total as number) || 0) : 0;
         const baseUrl = process.env.NEXT_PUBLIC_LABEL_API_URL || "https://pinit-label-api.onrender.com";
         const labelUrl = `${baseUrl}/label/${sku}/${size}?name=${name}&price=${price}&repair=${repair}`;
 
@@ -1471,6 +1479,339 @@ export const chatTools = {
         };
       } catch (err) {
         return { error: err instanceof Error ? err.message : "ดึงข้อมูลกระแสเงินสดไม่สำเร็จ" };
+      }
+    },
+  }),
+
+  create_repair_job: tool({
+    description:
+      "สร้างงานซ่อมใหม่ — บันทึกข้อมูลลูกค้า, รถ, ประเภทงาน, เสนอราคา (Create a new specialized repair job with customer, vehicle, job type, parts, and quoted price). IMPORTANT: Always confirm with user before calling.",
+    parameters: z.object({
+      customer_name: z.string().describe("ชื่อลูกค้า"),
+      customer_record_id: z.string().optional().describe("Airtable record ID ของลูกค้า (ถ้าค้นหาแล้วเจอ)"),
+      vehicle_description: z.string().describe("รายละเอียดรถ เช่น Honda Wave 110i สีแดง ปี 2012"),
+      license_plate: z.string().optional().describe("ทะเบียนรถ"),
+      job_type: z.array(z.string()).describe('ประเภทงาน เช่น ["เปลี่ยนน้ำมันเครื่อง", "เปลี่ยนแบตเตอรี่"]'),
+      effort_tier: z.string().describe("ระดับความยาก: Tier 1-5"),
+      estimated_hours: z.number().describe("ชั่วโมงคาดว่าจะใช้"),
+      labor_charge: z.number().describe("ค่าแรง (฿)"),
+      parts: z.array(z.object({
+        product_name: z.string().describe("ชื่ออะไหล่"),
+        quantity: z.number().describe("จำนวน"),
+      })).describe("อะไหล่ที่ต้องใช้"),
+      quoted_price: z.number().describe("ราคาเสนอลูกค้า (฿)"),
+      notes: z.string().optional().describe("หมายเหตุ"),
+    }),
+    execute: async ({
+      customer_name,
+      customer_record_id,
+      vehicle_description,
+      license_plate,
+      job_type,
+      effort_tier,
+      estimated_hours,
+      labor_charge,
+      parts,
+      quoted_price,
+      notes,
+    }) => {
+      try {
+        let customerId = customer_record_id;
+        if (!customerId) {
+          const sanitizedName = sanitizeForFormula(customer_name);
+          const customers = await selectRecords(TABLES.CUSTOMERS, {
+            filterByFormula: `SEARCH(LOWER("${sanitizedName}"), LOWER({customer_name}))`,
+            fields: ["customer_name"],
+            maxRecords: 1,
+          });
+          if (customers.length > 0) {
+            customerId = customers[0].id;
+          } else {
+            const newCustomer = await createRecord(TABLES.CUSTOMERS, {
+              customer_name,
+            });
+            customerId = newCustomer.id;
+          }
+        }
+
+        const vehicleFields: Record<string, unknown> = {
+          display_name: vehicle_description,
+          customer: [customerId],
+        };
+        if (license_plate) {
+          vehicleFields.license_plate = license_plate;
+        }
+        const vehicleRecord = await createRecord(TABLES.VEHICLES, vehicleFields);
+
+        const matchedParts: { productId: string; name: string; quantity: number }[] = [];
+        const unmatchedParts: string[] = [];
+        for (const part of parts) {
+          const sanitizedPart = sanitizeForFormula(part.product_name);
+          const products = await selectRecords(TABLES.PRODUCTS, {
+            filterByFormula: `OR(SEARCH(LOWER("${sanitizedPart}"), LOWER({display_name})), SEARCH(LOWER("${sanitizedPart}"), LOWER({sku})))`,
+            fields: ["display_name", "sku"],
+            maxRecords: 1,
+          });
+          if (products.length > 0) {
+            matchedParts.push({
+              productId: products[0].id,
+              name: (products[0].fields.display_name as string) || part.product_name,
+              quantity: part.quantity,
+            });
+          } else {
+            unmatchedParts.push(part.product_name);
+          }
+        }
+
+        const normalizedTier = normalizeSelect(effort_tier, EFFORT_TIER_MAP);
+
+        const jobFields: Record<string, unknown> = {
+          customer: [customerId],
+          vehicle: [vehicleRecord.id],
+          vehicle_description,
+          job_type: job_type,
+          status: "รับงาน (Quoting)",
+          quoted_date: new Date().toISOString().split("T")[0],
+          effort_tier: normalizedTier,
+          estimated_hours,
+          labor_charge,
+          quoted_price_to_customer: quoted_price,
+          created_by: "Mai",
+        };
+        if (license_plate) jobFields.license_plate = license_plate;
+        if (notes) jobFields.notes = notes;
+
+        const jobRecord = await createRecord(TABLES.REPAIR_JOBS, jobFields);
+
+        for (const mp of matchedParts) {
+          await createRecord(TABLES.REPAIR_JOB_PARTS, {
+            repair_job: [jobRecord.id],
+            product: [mp.productId],
+            quantity: mp.quantity,
+          });
+        }
+
+        return {
+          success: true,
+          jobId: jobRecord.fields.job_id || null,
+          jobRecordId: jobRecord.id,
+          customerName: customer_name,
+          vehicleDescription: vehicle_description,
+          licensePlate: license_plate || null,
+          jobType: job_type,
+          effortTier: normalizedTier,
+          estimatedHours: estimated_hours,
+          laborCharge: labor_charge,
+          quotedPrice: quoted_price,
+          partsMatched: matchedParts.length,
+          unmatchedParts,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "สร้างงานซ่อมไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
+  update_product: tool({
+    description:
+      "แก้ไขข้อมูลสินค้า — ราคาขาย, ต้นทุน, ราคาซ่อม, ชื่อ, แสดงราคาซ่อมบนฉลาก (Update product details: sell price, cost, repair price, name, show_repair_on_label)",
+    parameters: z.object({
+      product_record_id: z.string().describe("Airtable record ID ของสินค้า (ได้จาก lookup_product)"),
+      sell_price: z.number().optional().describe("ราคาขายใหม่"),
+      cost_price: z.number().optional().describe("ต้นทุนใหม่"),
+      repair_price: z.number().optional().describe("ราคาซ่อมใหม่"),
+      display_name: z.string().optional().describe("ชื่อสินค้าใหม่"),
+      show_repair_on_label: z.boolean().optional().describe("แสดงราคาซ่อมบนฉลาก"),
+    }),
+    execute: async ({ product_record_id, ...updates }) => {
+      try {
+        const product = await getRecord(TABLES.PRODUCTS, product_record_id);
+
+        const updateFields: Record<string, unknown> = {};
+        if (updates.sell_price !== undefined) updateFields.last_known_sell_price_baht = updates.sell_price;
+        if (updates.cost_price !== undefined) updateFields.last_known_cost_baht = updates.cost_price;
+        if (updates.repair_price !== undefined) updateFields.repair_price_total = updates.repair_price;
+        if (updates.display_name !== undefined) updateFields.display_name = updates.display_name;
+        if (updates.show_repair_on_label !== undefined) updateFields.show_repair_on_label = updates.show_repair_on_label;
+
+        if (Object.keys(updateFields).length === 0) {
+          return { success: false, error: "ไม่มีข้อมูลที่ต้องแก้ไข" };
+        }
+
+        await updateRecord(TABLES.PRODUCTS, product_record_id, updateFields);
+
+        return {
+          success: true,
+          productName: product.fields.display_name,
+          sku: product.fields.sku,
+          changes: Object.entries(updateFields).map(([field, value]) => ({
+            field,
+            oldValue: product.fields[field],
+            newValue: value,
+          })),
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "แก้ไขสินค้าไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
+  delete_record: tool({
+    description:
+      "ลบรายการ — ลบบันทึกการขาย, ค่าใช้จ่าย, หรือการซื้อ (Delete a sale, expense, or purchase record). Only records created today can be deleted. IMPORTANT: Always confirm with user before calling.",
+    parameters: z.object({
+      table: z.enum(["Sales", "Expenses", "Purchases"]).describe("ตาราง"),
+      record_id: z.string().describe("Airtable record ID ของรายการที่จะลบ"),
+      reason: z.string().describe("เหตุผลที่ลบ"),
+    }),
+    execute: async ({ table, record_id, reason }) => {
+      try {
+        const record = await getRecord(table, record_id);
+        const createdTime = new Date(record.createdTime);
+        const today = new Date();
+        const isToday =
+          createdTime.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }) ===
+          today.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+
+        if (!isToday) {
+          return {
+            success: false,
+            error: "ลบได้เฉพาะรายการที่สร้างวันนี้เท่านั้น สำหรับรายการเก่ากว่า กรุณาติดต่อ Mint ให้ลบใน Airtable ค่ะ",
+          };
+        }
+
+        if (table === "Sales") {
+          const lineItems = await selectRecords(TABLES.SALE_LINE_ITEMS, {
+            filterByFormula: `FIND("${record_id}", ARRAYJOIN(RECORD_ID()))`,
+            fields: ["sale"],
+            maxRecords: 50,
+          });
+          const linkedItems = lineItems.filter((li) => {
+            const saleLinks = li.fields.sale as string[] | undefined;
+            return saleLinks && saleLinks.includes(record_id);
+          });
+          for (const li of linkedItems) {
+            await deleteRecord(TABLES.SALE_LINE_ITEMS, li.id);
+          }
+        }
+
+        await deleteRecord(table, record_id);
+
+        return {
+          success: true,
+          table,
+          recordId: record_id,
+          reason,
+          warning: table === "Sales"
+            ? "สต็อกอาจต้องปรับด้วยมือ เนื่องจากระบบลดสต็อกอัตโนมัติตอนขาย"
+            : undefined,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "ลบรายการไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
+  get_pending_receiving: tool({
+    description:
+      "ดูรายการสินค้ารอรับ — สินค้าที่สั่งซื้อแล้วยังไม่ได้รับ (List purchase line items where is_received is unchecked)",
+    parameters: z.object({
+      supplier_name: z.string().optional().describe("กรองตามผู้จำหน่าย (ข้ามได้)"),
+    }),
+    execute: async ({ supplier_name }) => {
+      try {
+        let formula = `{is_received} = FALSE()`;
+        if (supplier_name) {
+          const sanitized = sanitizeForFormula(supplier_name);
+          formula = `AND({is_received} = FALSE(), SEARCH(LOWER("${sanitized}"), LOWER({supplier_name})))`;
+        }
+
+        const records = await selectRecords(TABLES.PURCHASE_LINE_ITEMS, {
+          filterByFormula: formula,
+          fields: [
+            "product_name",
+            "quantity",
+            "unit_cost",
+            "purchase_id",
+            "supplier_name",
+            "is_received",
+          ],
+          sort: [{ field: "purchase_id", direction: "desc" }],
+        });
+
+        return {
+          pendingCount: records.length,
+          items: records.map((r) => ({
+            id: r.id,
+            productName: Array.isArray(r.fields.product_name) ? r.fields.product_name[0] : r.fields.product_name || "Unknown",
+            quantity: (r.fields.quantity as number) || 0,
+            unitCost: (r.fields.unit_cost as number) || 0,
+            purchaseId: r.fields.purchase_id || null,
+            supplierName: Array.isArray(r.fields.supplier_name) ? r.fields.supplier_name[0] : r.fields.supplier_name || null,
+          })),
+        };
+      } catch (err) {
+        return {
+          error: err instanceof Error ? err.message : "ดึงรายการรอรับไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
+  confirm_receiving: tool({
+    description:
+      "ยืนยันรับสินค้า — ติ๊ก is_received ซึ่งจะเพิ่มสต็อกอัตโนมัติผ่าน Airtable automation (Confirm receipt of purchase line items. Checking is_received triggers Automation 6 which increments stock and timestamps received_at.) IMPORTANT: Always confirm with user before calling.",
+    parameters: z.object({
+      line_item_ids: z.array(z.string()).describe("Airtable record IDs ของ Purchase Line Items ที่จะรับ"),
+      quantity_adjustments: z
+        .array(
+          z.object({
+            id: z.string().describe("Record ID"),
+            actual_quantity: z.number().describe("จำนวนที่ได้รับจริง (ถ้าต่างจากที่สั่ง)"),
+          })
+        )
+        .optional()
+        .describe("ปรับจำนวนถ้าได้รับไม่ครบ"),
+    }),
+    execute: async ({ line_item_ids, quantity_adjustments }) => {
+      try {
+        const results: { id: string; adjusted: boolean }[] = [];
+
+        for (const id of line_item_ids) {
+          const adjustment = quantity_adjustments?.find((a) => a.id === id);
+
+          const updateFields: Record<string, unknown> = {
+            is_received: true,
+          };
+
+          if (adjustment) {
+            updateFields.quantity = adjustment.actual_quantity;
+          }
+
+          await updateRecord(TABLES.PURCHASE_LINE_ITEMS, id, updateFields);
+          results.push({ id, adjusted: !!adjustment });
+        }
+
+        return {
+          success: true,
+          receivedCount: results.length,
+          adjustedCount: results.filter((r) => r.adjusted).length,
+          note: "สต็อกเพิ่มอัตโนมัติแล้วค่ะ ✅",
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "ยืนยันรับสินค้าไม่สำเร็จ",
+        };
       }
     },
   }),

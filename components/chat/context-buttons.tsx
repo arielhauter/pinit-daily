@@ -10,7 +10,9 @@ interface ContextButtonsProps {
 const BUTTONS = [
   { emoji: "📗", label: "ขาย", prompt: "ต้องการบันทึกการขาย", color: "border-green-500" },
   { emoji: "📘", label: "ซื้อ", prompt: "ต้องการบันทึกการซื้อ", color: "border-blue-500" },
-  { emoji: "📙", label: "ซ่อม", prompt: "ต้องการดูงานซ่อม", color: "border-orange-500" },
+  { emoji: "📦", label: "รับของ", prompt: "ต้องการรับสินค้าเข้าสต็อก", color: "border-teal-500" },
+  { emoji: "🔧", label: "งานซ่อม", prompt: "ต้องการดูงานซ่อม", color: "border-yellow-500" },
+  { emoji: "📙", label: "รับงานซ่อม", prompt: "ต้องการสร้างงานซ่อมใหม่", color: "border-orange-500" },
   { emoji: "💸", label: "จ่าย", prompt: "ต้องการบันทึกค่าใช้จ่าย", color: "border-red-500" },
   { emoji: "📦", label: "สต็อก", prompt: "ต้องการนับสต็อก", color: "border-purple-500" },
   { emoji: "🌙", label: "ปิดร้าน", prompt: "__CLOSE_SHOP__", color: "border-slate-500" },

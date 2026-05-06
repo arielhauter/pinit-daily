@@ -614,6 +614,173 @@ function WorkOrderUpdateCard({ data }: { data: {
   );
 }
 
+function RepairJobCreationCard({ data }: { data: {
+  success: boolean; error?: string;
+  jobId?: number | null; jobRecordId?: string;
+  customerName?: string; vehicleDescription?: string; licensePlate?: string | null;
+  jobType?: string[]; effortTier?: string; estimatedHours?: number;
+  laborCharge?: number; quotedPrice?: number;
+  partsMatched?: number; unmatchedParts?: string[];
+} }) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ สร้างงานซ่อมไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-orange-500 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ สร้างงานซ่อม #{data.jobId} เรียบร้อย!</div>
+      <div className="text-sm text-slate-300 mt-1">👤 {data.customerName}</div>
+      <div className="text-sm text-slate-300">🏍 {data.vehicleDescription}{data.licensePlate ? ` (${data.licensePlate})` : ""}</div>
+      <div className="text-sm text-slate-300">🔧 {data.jobType?.join(", ")}</div>
+      <div className="text-sm text-slate-300">⏱ {data.effortTier} — {data.estimatedHours} ชม.</div>
+      <div className="text-sm text-slate-300">💰 ค่าแรง {formatBaht(data.laborCharge || 0)} | เสนอราคา {formatBaht(data.quotedPrice || 0)}</div>
+      <div className="text-sm text-slate-300">🔩 อะไหล่ {data.partsMatched} รายการ</div>
+      {data.unmatchedParts && data.unmatchedParts.length > 0 && (
+        <div className="text-sm text-yellow-300 mt-1">⚠️ ไม่พบในระบบ: {data.unmatchedParts.join(", ")}</div>
+      )}
+      {data.jobRecordId && (
+        <button
+          className="mt-2 text-xs bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg transition-colors"
+          data-label-url={`https://pinit-print-api.onrender.com/workorder/${data.jobRecordId}`}
+        >
+          🖨 พิมพ์ใบสั่งงาน
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ProductUpdateCard({ data }: { data: {
+  success: boolean; error?: string;
+  productName?: string; sku?: string;
+  changes?: { field: string; oldValue: unknown; newValue: unknown }[];
+} }) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ แก้ไขสินค้าไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+
+  const fieldLabels: Record<string, string> = {
+    last_known_sell_price_baht: "ราคาขาย",
+    last_known_cost_baht: "ต้นทุน",
+    repair_price_total: "ราคาซ่อม",
+    display_name: "ชื่อสินค้า",
+    show_repair_on_label: "แสดงราคาซ่อมบนฉลาก",
+  };
+
+  return (
+    <div className="bg-slate-800 border-l-4 border-sky-400 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ แก้ไข {data.productName} เรียบร้อย!</div>
+      <div className="text-xs text-slate-500">{data.sku}</div>
+      {data.changes?.map((c, i) => (
+        <div key={i} className="text-sm text-slate-300 mt-1">
+          {fieldLabels[c.field] || c.field}:{" "}
+          <span className="text-slate-500">{typeof c.oldValue === "boolean" ? (c.oldValue ? "เปิด" : "ปิด") : String(c.oldValue ?? "-")}</span>
+          {" → "}
+          <span className="text-white">{typeof c.newValue === "boolean" ? (c.newValue ? "เปิด" : "ปิด") : String(c.newValue)}</span>
+        </div>
+      ))}
+      <button
+        className="mt-2 text-xs bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg transition-colors"
+        data-card-action={`พิมพ์ฉลาก ${data.sku} ขนาด 40x30`}
+      >
+        🏷 พิมพ์ฉลากใหม่
+      </button>
+    </div>
+  );
+}
+
+function DeleteConfirmationCard({ data }: { data: {
+  success: boolean; error?: string;
+  table?: string; recordId?: string; reason?: string; warning?: string;
+} }) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ ลบไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-red-400 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ ลบรายการเรียบร้อย!</div>
+      {data.warning && (
+        <div className="text-sm text-yellow-300 mt-1">⚠️ {data.warning}</div>
+      )}
+    </div>
+  );
+}
+
+function PendingReceivingCard({ data }: { data: {
+  pendingCount?: number; error?: string;
+  items?: { id: string; productName: string; quantity: number; unitCost: number; purchaseId: string | null; supplierName: string | null }[];
+} }) {
+  if (data.error) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ ดึงรายการรอรับไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+  if (!data.items || data.items.length === 0) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-teal-500 rounded-r-lg p-3">
+        <div className="font-medium text-slate-300">📦 ไม่มีรายการรอรับค่ะ</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-teal-500 rounded-r-lg p-3">
+      <div className="font-medium text-teal-300">📦 รายการรอรับ — {data.pendingCount} รายการ</div>
+      <div className="mt-1 space-y-1">
+        {data.items.slice(0, 15).map((item, i) => (
+          <div key={item.id} className="text-sm text-slate-300">
+            {i + 1}. {item.productName} × {item.quantity}
+            {item.unitCost > 0 && <span className="text-slate-500"> ({formatBaht(item.unitCost)}/ชิ้น)</span>}
+            {item.supplierName && <span className="text-slate-500"> — {item.supplierName}</span>}
+          </div>
+        ))}
+        {data.items.length > 15 && (
+          <div className="text-xs text-slate-500">...และอีก {data.items.length - 15} รายการ</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReceivingConfirmCard({ data }: { data: {
+  success: boolean; error?: string;
+  receivedCount?: number; adjustedCount?: number; note?: string;
+} }) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ ยืนยันรับสินค้าไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-teal-500 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ รับสินค้า {data.receivedCount} รายการเรียบร้อย!</div>
+      <div className="text-sm text-slate-300 mt-1">{data.note}</div>
+      {data.adjustedCount && data.adjustedCount > 0 && (
+        <div className="text-sm text-yellow-300">📝 ปรับจำนวน {data.adjustedCount} รายการ</div>
+      )}
+    </div>
+  );
+}
+
 export function ToolResultCard({ toolName, state, result }: ToolResultCardProps) {
   if (state !== "result") {
     return (
@@ -670,6 +837,16 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <CashFlowCard data={data as Parameters<typeof CashFlowCard>[0]["data"]} />;
     case "update_repair_from_workorder":
       return <WorkOrderUpdateCard data={data as Parameters<typeof WorkOrderUpdateCard>[0]["data"]} />;
+    case "create_repair_job":
+      return <RepairJobCreationCard data={data as Parameters<typeof RepairJobCreationCard>[0]["data"]} />;
+    case "update_product":
+      return <ProductUpdateCard data={data as Parameters<typeof ProductUpdateCard>[0]["data"]} />;
+    case "delete_record":
+      return <DeleteConfirmationCard data={data as Parameters<typeof DeleteConfirmationCard>[0]["data"]} />;
+    case "get_pending_receiving":
+      return <PendingReceivingCard data={data as Parameters<typeof PendingReceivingCard>[0]["data"]} />;
+    case "confirm_receiving":
+      return <ReceivingConfirmCard data={data as Parameters<typeof ReceivingConfirmCard>[0]["data"]} />;
     default:
       return (
         <pre className="text-xs text-slate-400 overflow-auto">
