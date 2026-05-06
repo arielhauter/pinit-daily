@@ -722,7 +722,7 @@ function DeleteConfirmationCard({ data }: { data: {
 
 function PendingReceivingCard({ data }: { data: {
   pendingCount?: number; error?: string;
-  items?: { id: string; productName: string; quantity: number; unitCost: number; purchaseId: string | null; supplierName: string | null }[];
+  items?: { id: string; productName: string; quantity: number; totalUnitsReceived: number; unitCost: number; currentStock: number; purchaseId: string | null }[];
 } }) {
   if (data.error) {
     return (
@@ -747,7 +747,7 @@ function PendingReceivingCard({ data }: { data: {
           <div key={item.id} className="text-sm text-slate-300">
             {i + 1}. {item.productName} × {item.quantity}
             {item.unitCost > 0 && <span className="text-slate-500"> ({formatBaht(item.unitCost)}/ชิ้น)</span>}
-            {item.supplierName && <span className="text-slate-500"> — {item.supplierName}</span>}
+            <span className="text-slate-500"> | สต็อก: {item.currentStock}</span>
           </div>
         ))}
         {data.items.length > 15 && (

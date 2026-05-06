@@ -162,9 +162,9 @@ export default function ChatPage() {
             </button>
             {showDashboardMenu && (
               <div className="absolute right-0 top-8 bg-slate-800 rounded-lg shadow-lg z-40 border border-slate-700 py-1 w-48">
-                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagkJuVgkVyoMZBDp" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">📈 ยอดขาย</a>
-                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagRW4wXPtVJwFHmw" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">🔧 งานซ่อม</a>
-                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagNTa1jp1fMdlmqy" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">💸 ค่าใช้จ่าย</a>
+                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagvJTFN33q1a42Ld" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">💰 แดชบอร์ด</a>
+                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagwrR5454lhRruBN" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">🔧 แดชบอร์ดงานซ่อม</a>
+                <a href="https://airtable.com/appx3s0m3OFYJCTLI/pagNTa1jp1fMdlmqy" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">📋 Mint รีวิวประจำวัน</a>
                 <a href="https://airtable.com/appx3s0m3OFYJCTLI/pag46ZWMNO49mVK7t" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">📦 มูลค่าสต็อก</a>
               </div>
             )}

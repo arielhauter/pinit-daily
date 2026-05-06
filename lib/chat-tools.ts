@@ -1738,11 +1738,12 @@ export const chatTools = {
         const records = await selectRecords(TABLES.PURCHASE_LINE_ITEMS, {
           filterByFormula: formula,
           fields: [
-            "product_name",
+            "product_name_lookup",
             "quantity",
+            "total_units_received",
             "unit_cost",
             "purchase_id",
-            "supplier_name",
+            "current_stock_lookup",
             "is_received",
           ],
           sort: [{ field: "purchase_id", direction: "desc" }],
@@ -1752,11 +1753,12 @@ export const chatTools = {
           pendingCount: records.length,
           items: records.map((r) => ({
             id: r.id,
-            productName: Array.isArray(r.fields.product_name) ? r.fields.product_name[0] : r.fields.product_name || "Unknown",
+            productName: Array.isArray(r.fields.product_name_lookup) ? r.fields.product_name_lookup[0] : r.fields.product_name_lookup || "Unknown",
             quantity: (r.fields.quantity as number) || 0,
+            totalUnitsReceived: (r.fields.total_units_received as number) || (r.fields.quantity as number) || 0,
             unitCost: (r.fields.unit_cost as number) || 0,
+            currentStock: Array.isArray(r.fields.current_stock_lookup) ? r.fields.current_stock_lookup[0] : (r.fields.current_stock_lookup as number) || 0,
             purchaseId: r.fields.purchase_id || null,
-            supplierName: Array.isArray(r.fields.supplier_name) ? r.fields.supplier_name[0] : r.fields.supplier_name || null,
           })),
         };
       } catch (err) {
