@@ -1,4 +1,5 @@
 import { createRecord, createRecords } from "@/lib/airtable";
+import { put } from "@vercel/blob";
 import { TABLES, normalizeName, VARIANCE_THRESHOLD } from "@/lib/constants";
 import type { ReconcilePayload } from "@/lib/types";
 
@@ -36,6 +37,23 @@ export async function POST(request: Request) {
       drawRecordIds = drawRecords.map((r) => r.id);
     }
 
+    let ledgerPhotoUrl: string | undefined;
+    if (data.imageBase64) {
+      try {
+        const match = data.imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+        if (match) {
+          const contentType = match[1];
+          const ext = contentType.split("/")[1] || "jpg";
+          const buffer = Buffer.from(match[2], "base64");
+          const filename = `ledger-${data.date}-${Date.now()}.${ext}`;
+          const blob = await put(filename, buffer, { access: "public", contentType });
+          ledgerPhotoUrl = blob.url;
+        }
+      } catch (uploadErr) {
+        console.error("Ledger photo upload failed:", uploadErr);
+      }
+    }
+
     const reconciliationFields: Record<string, unknown> = {
       date: data.date,
       starting_balance: data.extraction.starting_balance,
@@ -54,6 +72,10 @@ export async function POST(request: Request) {
 
     if (drawRecordIds.length > 0) {
       reconciliationFields.person_draws = drawRecordIds;
+    }
+
+    if (ledgerPhotoUrl) {
+      reconciliationFields.ledger_photo = [{ url: ledgerPhotoUrl }];
     }
 
     await createRecord(TABLES.DAILY_CASH_RECONCILIATION, reconciliationFields);

@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
+import { put } from "@vercel/blob";
 import { WorkOrderExtractionSchema } from "@/lib/workorder-schema";
 
 export const maxDuration = 60;
@@ -50,7 +51,22 @@ export async function POST(req: Request) {
       ],
     });
 
-    return Response.json(result.object);
+    let imageUrl: string | undefined;
+    try {
+      const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        const contentType = match[1];
+        const ext = contentType.split("/")[1] || "jpg";
+        const buffer = Buffer.from(match[2], "base64");
+        const filename = `workorder-${result.object.job_id || "unknown"}-${Date.now()}.${ext}`;
+        const blob = await put(filename, buffer, { access: "public", contentType });
+        imageUrl = blob.url;
+      }
+    } catch (uploadErr) {
+      console.error("Work order photo upload failed:", uploadErr);
+    }
+
+    return Response.json({ ...result.object, image_url: imageUrl });
   } catch (err) {
     console.error("Work order extraction error:", err);
     return Response.json(

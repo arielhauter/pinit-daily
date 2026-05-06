@@ -120,9 +120,13 @@ export default function ChatPage() {
               .join(", ")
           : "ไม่มี";
 
+      const imageUrlLine = extraction.image_url
+        ? `\n- รูปใบสั่งงาน: ${extraction.image_url}`
+        : "";
+
       append({
         role: "user",
-        content: `📋 ถ่ายรูปใบสั่งงานซ่อม งาน #${extraction.job_id}\n\nข้อมูลที่อ่านได้:\n- ชั่วโมงรวม: ${extraction.total_hours} ชม.\n- อะไหล่เพิ่ม: ${partsText}\n- หมายเหตุ: ${extraction.notes || "ไม่มี"}\n- คำแนะนำลูกค้า: ${extraction.advice_for_customer || "ไม่มี"}\n\nถูกต้องไหม?`,
+        content: `📋 ถ่ายรูปใบสั่งงานซ่อม งาน #${extraction.job_id}\n\nข้อมูลที่อ่านได้:\n- ชั่วโมงรวม: ${extraction.total_hours} ชม.\n- อะไหล่เพิ่ม: ${partsText}\n- หมายเหตุ: ${extraction.notes || "ไม่มี"}\n- คำแนะนำลูกค้า: ${extraction.advice_for_customer || "ไม่มี"}${imageUrlLine}\n\nถูกต้องไหม?`,
       });
     } catch {
       append({

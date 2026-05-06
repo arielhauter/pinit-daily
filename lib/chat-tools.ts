@@ -550,7 +550,9 @@ After multi-item: always ask "เพิ่มสินค้าอีกไห�
     description:
       `บันทึกค่าใช้จ่าย (Create an expense record). IMPORTANT: Always confirm with user before calling.
 REQUIRED: category, amount, payment_method (เงินสด/โอน), description. OPTIONAL: expense_date (default today), note.
-SPEED: Simplest flow — aim for 4 exchanges max. "จ่ายค่าน้ำมัน 200 สด" → parse and confirm in one step.`,
+SPEED: Simplest flow — aim for 4 exchanges max. "จ่ายค่าน้ำมัน 200 สด" → parse and confirm in one step.
+VALID CATEGORIES: ค่าไฟ (Electricity), ค่าน้ำ (Water), ค่าน้ำมันรถ (Fuel), ค่าอินเทอร์เน็ต (Internet), ค่าซอฟต์แวร์ (Software i.e. Airtable, Fillout), ค่า AI / Claude, ค่าโทรศัพท์ (Cell phone plans Mai, Boot, Pinit), ค่าจ้างช่าง (Part-time labor), ค่าขนส่ง (Shipping / inbound freight), ค่าเครื่องมือ (Tools & maintenance), เงินเดือน Mai, เงินเดือน Boot, เงินเดือน/เบิก Pinit, ค่าอาหาร/เครื่องดื่ม (Food & drinking water - shop), ดอกเบี้ยเบิกเกินบัญชี (SCB overdraft interest), ค่ายื่นภาษี (Tax filing), Netflix, ค่าฟาร์ม (Farm subsidy - labor, transport, supplies), อื่นๆ (Other).
+Present common ones as quick choices: ค่าน้ำมันรถ, ค่าเครื่องมือ, ค่าขนส่ง, ค่าอาหาร, ค่าไฟ, ค่าน้ำ, อื่นๆ.`,
     parameters: z.object({
       expense_date: z.string().optional().describe("วันที่ (YYYY-MM-DD) ถ้าไม่ระบุใช้วันนี้"),
       category: z.string().describe("หมวดหมู่ค่าใช้จ่าย"),
@@ -1305,6 +1307,10 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
         .string()
         .optional()
         .describe("วันที่ซ่อมเสร็จ YYYY-MM-DD"),
+      image_url: z
+        .string()
+        .optional()
+        .describe("URL ของรูปใบสั่งงาน (ถ้ามี — ได้จากข้อความที่ Mai ส่งมา)"),
     }),
     execute: async ({
       job_id,
@@ -1313,6 +1319,7 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
       notes,
       boot_advice,
       completion_date,
+      image_url,
     }) => {
       try {
         const jobs = await selectRecords(TABLES.REPAIR_JOBS, {
@@ -1342,6 +1349,9 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
         }
         if (boot_advice) {
           updateFields.boot_advice_for_mai = boot_advice;
+        }
+        if (image_url) {
+          updateFields.workorder_photo = [{ url: image_url }];
         }
 
         await updateRecord(TABLES.REPAIR_JOBS, jobRecord.id, updateFields);
