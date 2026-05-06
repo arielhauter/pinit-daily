@@ -86,6 +86,41 @@ function SalesSummaryCard({ data }: { data: {
   );
 }
 
+function TodayExpensesCard({ data }: { data: {
+  count: number; error?: string;
+  expenses: Array<{ id: string; expenseId: unknown; category: unknown; amount: unknown; paymentMethod: unknown; description: unknown }>;
+} }) {
+  if (data.error) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ ดึงข้อมูลค่าใช้จ่ายไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{String(data.error)}</div>
+      </div>
+    );
+  }
+  if (data.count === 0) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-400 rounded-r-lg p-3">
+        <div className="font-medium text-slate-300">💸 ไม่มีค่าใช้จ่ายวันนี้</div>
+      </div>
+    );
+  }
+  const total = data.expenses.reduce((sum, e) => sum + ((e.amount as number) || 0), 0);
+  return (
+    <div className="bg-slate-800 border-l-4 border-red-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">💸 ค่าใช้จ่ายวันนี้ — {data.count} รายการ ({formatBaht(total)})</div>
+      <div className="mt-1 space-y-1">
+        {data.expenses.map((e, i) => (
+          <div key={e.id} className="text-sm text-slate-300">
+            {i + 1}. {String(e.category || "")} — {formatBaht((e.amount as number) || 0)} {String(e.paymentMethod || "")}
+            {e.description ? <span className="text-slate-500"> ({String(e.description)})</span> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RepairJobsCard({ data }: { data: { count: number; jobs: Array<{
   id: string; jobId: number; customer: string; vehicleDescription: string;
   licensePlate: string; status: string; jobType: string[];
@@ -344,6 +379,7 @@ function RepairStatusConfirmationCard({ data }: { data: {
   success: boolean; error?: string; currentStatus?: string; validTransitions?: string[];
   jobNumber?: number; previousStatus?: string; newStatus?: string;
   paymentMethod?: string | null; totalCollected?: number | null;
+  workorderUrl?: string;
 } }) {
   if (!data.success) {
     return (
@@ -368,6 +404,14 @@ function RepairStatusConfirmationCard({ data }: { data: {
         <div className="text-xs text-slate-400 mt-1">
           ชำระ: {data.paymentMethod} | เก็บ: {formatBaht(data.totalCollected || 0)}
         </div>
+      )}
+      {data.workorderUrl && (
+        <button
+          data-label-url={data.workorderUrl}
+          className="mt-2 text-sm bg-orange-800 text-orange-200 px-3 py-1 rounded-full cursor-pointer"
+        >
+          🖨 พิมพ์ใบสั่งงาน
+        </button>
       )}
     </div>
   );
@@ -754,6 +798,12 @@ function PendingReceivingCard({ data }: { data: {
           <div className="text-xs text-slate-500">...และอีก {data.items.length - 15} รายการ</div>
         )}
       </div>
+      <button
+        data-card-action="รับสินค้าทั้งหมด"
+        className="mt-2 text-sm bg-teal-800 text-teal-200 px-3 py-1 rounded-full cursor-pointer"
+      >
+        ✅ รับทั้งหมด ({data.pendingCount} รายการ)
+      </button>
     </div>
   );
 }
@@ -807,6 +857,8 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <ProductCards data={data as Parameters<typeof ProductCards>[0]["data"]} />;
     case "get_today_sales":
       return <SalesSummaryCard data={data as Parameters<typeof SalesSummaryCard>[0]["data"]} />;
+    case "get_today_expenses":
+      return <TodayExpensesCard data={data as Parameters<typeof TodayExpensesCard>[0]["data"]} />;
     case "get_repair_jobs":
       return <RepairJobsCard data={data as Parameters<typeof RepairJobsCard>[0]["data"]} />;
     case "search_customer":

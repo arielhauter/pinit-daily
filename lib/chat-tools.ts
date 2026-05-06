@@ -237,7 +237,7 @@ export const chatTools = {
 
   get_today_sales: tool({
     description:
-      "ดูสรุปยอดขายวันนี้ — จำนวน, ยอดรวม, แยกตามวิธีชำระเงิน (Get today's sales summary)",
+      "ดูสรุปยอดขายวันนี้ — จำนวน, ยอดรวม, แยกตามวิธีชำระเงิน (Get today's sales summary). Returns Airtable record IDs — use this to find a sale before calling delete_record.",
     parameters: z.object({}),
     execute: async () => {
       try {
@@ -283,6 +283,7 @@ export const chatTools = {
             [];
 
           return {
+            id: r.id,
             saleId: (f.sale_id as number) || 0,
             type,
             paymentMethod,
@@ -303,6 +304,37 @@ export const chatTools = {
         };
       } catch (err) {
         return { date: "", count: 0, totalRevenue: 0, byPaymentMethod: {}, byType: {}, error: err instanceof Error ? err.message : "ดึงข้อมูลยอดขายไม่สำเร็จ" };
+      }
+    },
+  }),
+
+  get_today_expenses: tool({
+    description:
+      "ดูค่าใช้จ่ายวันนี้ — ใช้สำหรับดูรายการหรือค้นหาก่อนลบ (List today's expenses). Returns Airtable record IDs — use this to find an expense before calling delete_record.",
+    parameters: z.object({}),
+    execute: async () => {
+      try {
+        const records = await selectRecords(TABLES.EXPENSES, {
+          filterByFormula: `IS_SAME({expense_date}, TODAY(), 'day')`,
+          fields: ["expense_id", "expense_date", "category", "amount", "payment_method", "description"],
+        });
+        return {
+          count: records.length,
+          expenses: records.map((r) => ({
+            id: r.id,
+            expenseId: r.fields.expense_id,
+            category: r.fields.category,
+            amount: r.fields.amount,
+            paymentMethod: r.fields.payment_method,
+            description: r.fields.description,
+          })),
+        };
+      } catch (err) {
+        return {
+          count: 0,
+          expenses: [],
+          error: err instanceof Error ? err.message : "ดึงข้อมูลค่าใช้จ่ายไม่สำเร็จ",
+        };
       }
     },
   }),
@@ -783,7 +815,7 @@ Flow: lookup_product → ask "นับได้กี่ชิ้น?" → show
     description:
       `อัปเดตสถานะงานซ่อม (Update repair job status). IMPORTANT: Always confirm with user before calling.
 Valid transitions: รับงาน→กำลังซ่อม, กำลังซ่อม→เสร็จแล้ว, เสร็จแล้ว→จ่ายแล้ว.
-รับงาน→กำลังซ่อม: no extra fields needed. After update, offer to print work order.
+รับงาน→กำลังซ่อม: no extra fields needed. After update, tell Mai: "พิมพ์ใบสั่งงานให้บูทได้เลยค่ะ กดปุ่ม 🖨 ด้านล่าง" (card has the button).
 กำลังซ่อม→เสร็จแล้ว: prefer work order photo extraction. Or manual: ask actual_hours, parts changes, notes, advice.
 เสร็จแล้ว→จ่ายแล้ว: REQUIRED payment_method + total_collected.`,
     parameters: z.object({
@@ -847,7 +879,7 @@ Valid transitions: รับงาน→กำลังซ่อม, กำล�
 
         await updateRecord(TABLES.REPAIR_JOBS, job_record_id, updateFields);
 
-        return {
+        const returnData: Record<string, unknown> = {
           success: true,
           jobId: job_record_id,
           jobNumber: currentRecord.fields.job_id as number,
@@ -856,6 +888,12 @@ Valid transitions: รับงาน→กำลังซ่อม, กำล�
           paymentMethod: normalizedPayment || null,
           totalCollected: total_collected || null,
         };
+
+        if (normalizedStatus.includes("กำลังซ่อม")) {
+          returnData.workorderUrl = `https://pinit-print-api.onrender.com/workorder/${job_record_id}`;
+        }
+
+        return returnData;
       } catch (err) {
         return {
           success: false,
@@ -1694,6 +1732,7 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
   delete_record: tool({
     description:
       `ลบรายการ — ลบการขาย, ค่าใช้จ่าย, หรือการซื้อ (Delete a sale/expense/purchase). Today-only records. IMPORTANT: Always confirm before calling.
+LOOKUP FIRST: Use get_today_sales to find sales, get_today_expenses to find expenses before deleting. The record_id param needs the Airtable record ID (starts with "rec").
 Warn "ลบแล้วกู้คืนไม่ได้". For Sales: warn stock was auto-decremented. For older records: tell user to contact Mint.`,
     parameters: z.object({
       table: z.enum(["Sales", "Expenses", "Purchases"]).describe("ตาราง"),
