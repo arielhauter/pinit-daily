@@ -1599,14 +1599,9 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
           }
         }
 
-        const vehicleFields: Record<string, unknown> = {
+        const vehicleRecord = await createRecord(TABLES.VEHICLES, {
           display_name: vehicle_description,
-          customer: [customerId],
-        };
-        if (license_plate) {
-          vehicleFields.license_plate = license_plate;
-        }
-        const vehicleRecord = await createRecord(TABLES.VEHICLES, vehicleFields);
+        });
 
         const normalizedTier = normalizeSelect(effort_tier, EFFORT_TIER_MAP);
 
