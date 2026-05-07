@@ -58,10 +58,22 @@ export async function POST(req: Request) {
   const model = selectModel(messages, oracleMode);
   const trimmedMessages = trimMessages(messages);
 
+  const messagesWithCache = [
+    {
+      role: "system" as const,
+      content: SYSTEM_PROMPT,
+      providerOptions: {
+        anthropic: {
+          cacheControl: { type: "ephemeral" },
+        },
+      },
+    },
+    ...trimmedMessages,
+  ];
+
   const result = await streamText({
-    model: anthropic(model, { cacheControl: true }),
-    system: SYSTEM_PROMPT,
-    messages: trimmedMessages,
+    model: anthropic(model),
+    messages: messagesWithCache,
     tools: chatTools,
     maxSteps: 5,
   });
