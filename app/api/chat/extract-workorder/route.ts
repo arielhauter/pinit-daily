@@ -7,14 +7,25 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { imageBase64 } = await req.json();
+    const body = await req.json();
+    const imageArray: string[] = body.images || (body.imageBase64 ? [body.imageBase64] : []);
 
-    if (!imageBase64 || typeof imageBase64 !== "string") {
+    if (imageArray.length === 0) {
       return Response.json(
         { error: "Missing image data" },
         { status: 400 }
       );
     }
+
+    const imageBlocks = imageArray.map((img) => ({
+      type: "image" as const,
+      image: img,
+    }));
+
+    const pageCount = imageArray.length;
+    const pageNote = pageCount > 1
+      ? `นี่คือรูปถ่ายใบสั่งงานซ่อม ${pageCount} หน้า จากร้านพินิจเจริญยนต์ ให้อ่านข้อมูลจากทุกหน้ารวมกัน`
+      : "นี่คือรูปถ่ายใบสั่งงานซ่อมจากร้านพินิจเจริญยนต์ (Pinit Charoen Yon auto parts shop)";
 
     const result = await generateObject({
       model: anthropic("claude-sonnet-4-6"),
@@ -23,13 +34,10 @@ export async function POST(req: Request) {
         {
           role: "user",
           content: [
-            {
-              type: "image",
-              image: imageBase64,
-            },
+            ...imageBlocks,
             {
               type: "text",
-              text: `นี่คือรูปถ่ายใบสั่งงานซ่อมจากร้านพินิจเจริญยนต์ (Pinit Charoen Yon auto parts shop)
+              text: `${pageNote}
 
 ใบสั่งงานนี้มีส่วนที่พิมพ์ (printed) และส่วนที่เขียนด้วยมือ (handwritten by Boot the mechanic)
 
@@ -51,22 +59,29 @@ export async function POST(req: Request) {
       ],
     });
 
-    let imageUrl: string | undefined;
-    try {
-      const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
-      if (match) {
-        const contentType = match[1];
-        const ext = contentType.split("/")[1] || "jpg";
-        const buffer = Buffer.from(match[2], "base64");
-        const filename = `workorder-${result.object.job_id || "unknown"}-${Date.now()}.${ext}`;
-        const blob = await put(filename, buffer, { access: "public", contentType });
-        imageUrl = blob.url;
+    const imageUrls: string[] = [];
+    for (let i = 0; i < imageArray.length; i++) {
+      try {
+        const match = imageArray[i].match(/^data:(image\/\w+);base64,(.+)$/);
+        if (match) {
+          const contentType = match[1];
+          const ext = contentType.split("/")[1] || "jpg";
+          const buffer = Buffer.from(match[2], "base64");
+          const suffix = imageArray.length > 1 ? `-p${i + 1}` : "";
+          const filename = `workorder-${result.object.job_id || "unknown"}${suffix}-${Date.now()}.${ext}`;
+          const blob = await put(filename, buffer, { access: "public", contentType });
+          imageUrls.push(blob.url);
+        }
+      } catch (uploadErr) {
+        console.error(`Work order photo upload failed (page ${i + 1}):`, uploadErr);
       }
-    } catch (uploadErr) {
-      console.error("Work order photo upload failed:", uploadErr);
     }
 
-    return Response.json({ ...result.object, image_url: imageUrl });
+    return Response.json({
+      ...result.object,
+      image_url: imageUrls[0] || undefined,
+      image_urls: imageUrls,
+    });
   } catch (err) {
     console.error("Work order extraction error:", err);
     return Response.json(

@@ -17,6 +17,7 @@ export default function ChatPage() {
   const [extracting, setExtracting] = useState(false);
   const [oracleMode, setOracleMode] = useState(false);
   const [showDashboardMenu, setShowDashboardMenu] = useState(false);
+  const [woPages, setWoPages] = useState<string[]>([]);
   const woCameraRef = useRef<HTMLInputElement>(null);
   const woGalleryRef = useRef<HTMLInputElement>(null);
 
@@ -94,23 +95,33 @@ export default function ChatPage() {
   };
 
   const handleWorkOrderPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     e.target.value = "";
+
+    const newPages: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const base64 = await compressImage(files[i], 1200, 0.7);
+      newPages.push(base64);
+    }
+    setWoPages((prev) => [...prev, ...newPages]);
     setShowWorkOrderUpload(false);
+  };
+
+  const handleSubmitWorkOrder = async () => {
+    if (woPages.length === 0) return;
+    const pages = [...woPages];
+    setWoPages([]);
     setExtracting(true);
 
     try {
-      const base64 = await compressImage(file, 1200, 0.7);
       const res = await fetch("/api/chat/extract-workorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64 }),
+        body: JSON.stringify({ images: pages }),
       });
 
-      if (!res.ok) {
-        throw new Error("Extraction failed");
-      }
+      if (!res.ok) throw new Error("Extraction failed");
 
       const extraction = await res.json();
       const partsText =
@@ -120,13 +131,14 @@ export default function ChatPage() {
               .join(", ")
           : "ไม่มี";
 
-      const imageUrlLine = extraction.image_url
-        ? `\n- รูปใบสั่งงาน: ${extraction.image_url}`
+      const imageUrls = (extraction.image_urls || []) as string[];
+      const imageUrlLine = imageUrls.length > 0
+        ? "\n- รูปใบสั่งงาน: " + imageUrls.join(", ")
         : "";
 
       append({
         role: "user",
-        content: `📋 ถ่ายรูปใบสั่งงานซ่อม งาน #${extraction.job_id}\n\nข้อมูลที่อ่านได้:\n- ชั่วโมงรวม: ${extraction.total_hours} ชม.\n- อะไหล่เพิ่ม: ${partsText}\n- หมายเหตุ: ${extraction.notes || "ไม่มี"}\n- คำแนะนำลูกค้า: ${extraction.advice_for_customer || "ไม่มี"}${imageUrlLine}\n\nถูกต้องไหม?`,
+        content: `📋 ถ่ายรูปใบสั่งงานซ่อม งาน #${extraction.job_id} (${pages.length} หน้า)\n\nข้อมูลที่อ่านได้:\n- ชั่วโมงรวม: ${extraction.total_hours} ชม.\n- อะไหล่เพิ่ม: ${partsText}\n- หมายเหตุ: ${extraction.notes || "ไม่มี"}\n- คำแนะนำลูกค้า: ${extraction.advice_for_customer || "ไม่มี"}${imageUrlLine}\n\nถูกต้องไหม?`,
       });
     } catch {
       append({
@@ -278,12 +290,13 @@ export default function ChatPage() {
         ref={woGalleryRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         onChange={handleWorkOrderPhoto}
       />
 
       {/* Work Order Upload Options */}
-      {showWorkOrderUpload && (
+      {showWorkOrderUpload && woPages.length === 0 && (
         <div className="absolute bottom-20 left-3 bg-slate-800 rounded-lg shadow-lg p-2 space-y-1 z-40 border border-slate-700">
           <button
             onClick={() => woCameraRef.current?.click()}
@@ -296,6 +309,44 @@ export default function ChatPage() {
             className="block w-full text-left text-sm text-slate-200 px-3 py-2 rounded hover:bg-slate-700"
           >
             🖼️ เลือกรูปจากแกลเลอรี
+          </button>
+        </div>
+      )}
+
+      {/* Staged work order pages */}
+      {woPages.length > 0 && !extracting && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-slate-800 border-t border-slate-700">
+          <div className="flex gap-1.5 flex-1 overflow-x-auto">
+            {woPages.map((page, i) => (
+              <div key={i} className="relative flex-shrink-0">
+                <img
+                  src={page}
+                  alt={`หน้า ${i + 1}`}
+                  className="w-12 h-12 rounded object-cover border border-slate-600"
+                />
+                <button
+                  onClick={() => setWoPages((prev) => prev.filter((_, j) => j !== i))}
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                >
+                  ×
+                </button>
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-center text-[9px]">
+                  {i + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => woCameraRef.current?.click()}
+            className="text-xs bg-slate-700 text-slate-300 px-2 py-1.5 rounded-lg flex-shrink-0"
+          >
+            + หน้าถัดไป
+          </button>
+          <button
+            onClick={handleSubmitWorkOrder}
+            className="text-xs bg-orange-600 text-white px-3 py-1.5 rounded-lg flex-shrink-0 font-medium"
+          >
+            ส่ง ({woPages.length} หน้า)
           </button>
         </div>
       )}
