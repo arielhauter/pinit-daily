@@ -194,8 +194,8 @@ export function CreateProductForm({
           <div className="text-xs text-slate-400 mb-2">
             พิมพ์ฉลาก (Print Label)
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            {(["40x20", "40x30", "70x30", "70x50"] as const).map(
+          <div className="grid grid-cols-5 gap-2">
+            {(["30x20", "40x20", "40x30", "70x30", "70x50"] as const).map(
               (size) => (
                 <button
                   key={size}

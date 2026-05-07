@@ -726,7 +726,7 @@ OPTIONAL: shipping_cost, note.`,
       "พิมพ์ฉลาก QR Code สำหรับสินค้า (Generate a QR code label for a product). Returns a URL that opens the label in a new tab.",
     parameters: z.object({
       sku: z.string().describe("รหัสสินค้า เช่น PD69000071"),
-      size: z.enum(["40x20", "40x30", "70x30", "70x50"]).describe("ขนาดฉลาก"),
+      size: z.enum(["30x20", "40x20", "40x30", "70x30", "70x50"]).describe("ขนาดฉลาก"),
       show_repair: z.boolean().optional().describe("แสดงราคาซ่อมบนฉลาก — ถ้าระบุจะอัปเดต show_repair_on_label ในระบบด้วย"),
     }),
     execute: async ({ sku, size, show_repair }) => {
