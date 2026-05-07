@@ -71,22 +71,40 @@ function addCacheControl(messages: any[]): any[] {
 }
 
 export async function POST(req: Request) {
-  const { messages, oracleMode } = await req.json();
+  try {
+    const { messages, oracleMode } = await req.json();
 
-  const model = selectModel(messages, oracleMode);
-  const trimmedMessages = trimMessages(messages);
-  const messagesWithCache = addCacheControl(trimmedMessages);
+    const model = selectModel(messages, oracleMode);
+    const trimmedMessages = trimMessages(messages);
+    const messagesWithCache = addCacheControl(trimmedMessages);
 
-  const result = await streamText({
-    model: anthropic(model, { cacheControl: true }),
-    system: SYSTEM_PROMPT,
-    messages: messagesWithCache,
-    tools: chatTools,
-    maxSteps: 5,
-    onFinish: async ({ experimental_providerMetadata }) => {
-      console.log("CACHE METRICS:", JSON.stringify(experimental_providerMetadata?.anthropic));
-    },
-  });
+    const result = await streamText({
+      model: anthropic(model, { cacheControl: true }),
+      system: SYSTEM_PROMPT,
+      messages: messagesWithCache,
+      tools: chatTools,
+      maxSteps: 5,
+      onFinish: async ({ experimental_providerMetadata }) => {
+        console.log("CACHE METRICS:", JSON.stringify(experimental_providerMetadata?.anthropic));
+      },
+    });
 
-  return result.toDataStreamResponse();
+    return result.toDataStreamResponse();
+  } catch (error: any) {
+    const status = error?.statusCode || error?.status || 500;
+    const message = error?.message || "";
+
+    if (status === 429 || message.includes("rate_limit")) {
+      return new Response(
+        JSON.stringify({ error: "กรุณารอสักครู่แล้วลองใหม่ค่ะ (rate limit)" }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    console.error("Chat API error:", status, message);
+    return new Response(
+      JSON.stringify({ error: "เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ" }),
+      { status, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
