@@ -83,6 +83,9 @@ export async function POST(req: Request) {
     messages: messagesWithCache,
     tools: chatTools,
     maxSteps: 5,
+    onFinish: async ({ experimental_providerMetadata }) => {
+      console.log("CACHE METRICS:", JSON.stringify(experimental_providerMetadata?.anthropic));
+    },
   });
 
   return result.toDataStreamResponse();
