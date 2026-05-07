@@ -1676,7 +1676,7 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
       try {
         await updateRecord(TABLES.REPAIR_JOBS, job_record_id, {
           labor_charge,
-          quoted_price_to_customer: quoted_price,
+          quoted_price: quoted_price,
         });
 
         const job = await getRecord(TABLES.REPAIR_JOBS, job_record_id);
