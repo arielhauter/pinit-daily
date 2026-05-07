@@ -52,27 +52,34 @@ function selectModel(messages: any[], oracleMode: boolean): string {
   return "claude-sonnet-4-6";
 }
 
+function addCacheControl(messages: any[]): any[] {
+  if (messages.length === 0) return messages;
+  const lastIndex = messages.length - 1;
+  return messages.map((msg, i) => {
+    if (i === lastIndex) {
+      return {
+        ...msg,
+        experimental_providerMetadata: {
+          anthropic: {
+            cacheControl: { type: "ephemeral" },
+          },
+        },
+      };
+    }
+    return msg;
+  });
+}
+
 export async function POST(req: Request) {
   const { messages, oracleMode } = await req.json();
 
   const model = selectModel(messages, oracleMode);
   const trimmedMessages = trimMessages(messages);
-
-  const messagesWithCache = [
-    {
-      role: "system" as const,
-      content: SYSTEM_PROMPT,
-      providerOptions: {
-        anthropic: {
-          cacheControl: { type: "ephemeral" },
-        },
-      },
-    },
-    ...trimmedMessages,
-  ];
+  const messagesWithCache = addCacheControl(trimmedMessages);
 
   const result = await streamText({
-    model: anthropic(model),
+    model: anthropic(model, { cacheControl: true }),
+    system: SYSTEM_PROMPT,
     messages: messagesWithCache,
     tools: chatTools,
     maxSteps: 5,
