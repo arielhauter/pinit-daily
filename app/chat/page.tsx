@@ -95,23 +95,17 @@ export default function ChatPage() {
   };
 
   const handleWorkOrderPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("handleWorkOrderPhoto fired, files:", e.target.files?.length);
-    const files = e.target.files;
-    if (!files || files.length === 0) {
-      console.log("No files selected");
-      return;
-    }
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
     e.target.value = "";
 
     try {
       const newPages: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        console.log(`Compressing file ${i + 1}/${files.length}:`, files[i].name, files[i].size);
-        const base64 = await compressImage(files[i], 1200, 0.7);
-        console.log(`Compressed file ${i + 1}, base64 length:`, base64.length);
+      for (const file of files) {
+        const base64 = await compressImage(file, 1200, 0.7);
         newPages.push(base64);
       }
-      console.log("Setting woPages, adding", newPages.length, "pages");
       setWoPages((prev) => [...prev, ...newPages]);
     } catch (err) {
       console.error("compressImage failed:", err);
