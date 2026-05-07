@@ -1548,38 +1548,36 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
 
   create_repair_job: tool({
     description:
-      `สร้างงานซ่อมใหม่ — บันทึกข้อมูลลูกค้า, รถ, ประเภทงาน, เสนอราคา (Create a new specialized repair job). IMPORTANT: Always confirm with user before calling.
-REQUIRED: customer_name, vehicle_description, job_type (array), effort_tier (Tier 1-5), estimated_hours, parts, labor_charge, quoted_price. OPTIONAL: license_plate, notes.
-Guided steps: 1.Customer 2.Vehicle+plate 3.Job type(s) 4.Effort tier 5.Hours 6.Parts 7.Labor 8.Quoted price 9.Confirm.
-Show suggested total before quoting. After creation offer to change status to กำลังซ่อม if customer approved.
-Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกติ ฿160/h, Tier 3 งานฝีมือ ฿200/h, Tier 4 งานซับซ้อน ฿240/h, Tier 5 งานใหญ่ ฿280/h.`,
+      `สร้างงานซ่อมใหม่ — บันทึกลูกค้า, รถ, ประเภทงาน, อะไหล่ แล้วคำนวณราคาแนะนำอัตโนมัติ (Create repair job with customer, vehicle, parts. Auto-calculates suggested labor and total from tier rate × hours + parts prices. Returns suggested quote for Mai to confirm or override.) IMPORTANT: Always confirm with user before calling.
+DO NOT set labor_charge or quoted_price — they are set later by finalize_repair_quote after Mai confirms.
+Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกติ ฿160/h, Tier 3 งานฝีมือ ฿200/h, Tier 4 งานซับซ้อน ฿250/h, Tier 5 งานใหญ่ ฿300/h.`,
     parameters: z.object({
       customer_name: z.string().describe("ชื่อลูกค้า"),
+      customer_phone: z.string().optional().describe("เบอร์โทรลูกค้า"),
       customer_record_id: z.string().optional().describe("Airtable record ID ของลูกค้า (ถ้าค้นหาแล้วเจอ)"),
       vehicle_description: z.string().describe("รายละเอียดรถ เช่น Honda Wave 110i สีแดง ปี 2012"),
       license_plate: z.string().optional().describe("ทะเบียนรถ"),
       job_type: z.array(z.string()).describe('ประเภทงาน เช่น ["เปลี่ยนน้ำมันเครื่อง", "เปลี่ยนแบตเตอรี่"]'),
       effort_tier: z.string().describe("ระดับความยาก: Tier 1-5"),
       estimated_hours: z.number().describe("ชั่วโมงคาดว่าจะใช้"),
-      labor_charge: z.number().describe("ค่าแรง (฿)"),
       parts: z.array(z.object({
-        product_name: z.string().describe("ชื่ออะไหล่"),
+        product_record_id: z.string().describe("Airtable record ID ของสินค้า"),
+        product_name: z.string().describe("ชื่อสินค้า"),
         quantity: z.number().describe("จำนวน"),
+        sell_price_override: z.number().optional().describe("ราคาขายที่ปรับ (ถ้าต้องการ)"),
       })).describe("อะไหล่ที่ต้องใช้"),
-      quoted_price: z.number().describe("ราคาเสนอลูกค้า (฿)"),
       notes: z.string().optional().describe("หมายเหตุ"),
     }),
     execute: async ({
       customer_name,
+      customer_phone,
       customer_record_id,
       vehicle_description,
       license_plate,
       job_type,
       effort_tier,
       estimated_hours,
-      labor_charge,
       parts,
-      quoted_price,
       notes,
     }) => {
       try {
@@ -1594,9 +1592,9 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
           if (customers.length > 0) {
             customerId = customers[0].id;
           } else {
-            const newCustomer = await createRecord(TABLES.CUSTOMERS, {
-              customer_name,
-            });
+            const fields: Record<string, unknown> = { customer_name };
+            if (customer_phone) fields.Phone = customer_phone;
+            const newCustomer = await createRecord(TABLES.CUSTOMERS, fields);
             customerId = newCustomer.id;
           }
         }
@@ -1610,39 +1608,17 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
         }
         const vehicleRecord = await createRecord(TABLES.VEHICLES, vehicleFields);
 
-        const matchedParts: { productId: string; name: string; quantity: number }[] = [];
-        const unmatchedParts: string[] = [];
-        for (const part of parts) {
-          const sanitizedPart = sanitizeForFormula(part.product_name);
-          const products = await selectRecords(TABLES.PRODUCTS, {
-            filterByFormula: `OR(SEARCH(LOWER("${sanitizedPart}"), LOWER({display_name})), SEARCH(LOWER("${sanitizedPart}"), LOWER({sku})))`,
-            fields: ["display_name", "sku"],
-            maxRecords: 1,
-          });
-          if (products.length > 0) {
-            matchedParts.push({
-              productId: products[0].id,
-              name: (products[0].fields.display_name as string) || part.product_name,
-              quantity: part.quantity,
-            });
-          } else {
-            unmatchedParts.push(part.product_name);
-          }
-        }
-
         const normalizedTier = normalizeSelect(effort_tier, EFFORT_TIER_MAP);
 
         const jobFields: Record<string, unknown> = {
           customer: [customerId],
           vehicle: [vehicleRecord.id],
           vehicle_description,
-          job_type: job_type,
+          job_type,
           status: "รับงาน (Quoting)",
-          quoted_date: new Date().toISOString().split("T")[0],
           effort_tier: normalizedTier,
           estimated_hours,
-          labor_charge,
-          quoted_price_to_customer: quoted_price,
+          quoted_date: new Date().toISOString().split("T")[0],
           created_by: "Mai",
         };
         if (license_plate) jobFields.license_plate = license_plate;
@@ -1650,33 +1626,78 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
 
         const jobRecord = await createRecord(TABLES.REPAIR_JOBS, jobFields);
 
-        for (const mp of matchedParts) {
-          await createRecord(TABLES.REPAIR_JOB_PARTS, {
+        const unmatchedParts: string[] = [];
+        for (const part of parts) {
+          const partFields: Record<string, unknown> = {
             repair_job: [jobRecord.id],
-            product: [mp.productId],
-            quantity: mp.quantity,
-          });
+            product: [part.product_record_id],
+            quantity: part.quantity,
+          };
+          if (part.sell_price_override) {
+            partFields.sell_price_override = part.sell_price_override;
+          }
+          await createRecord(TABLES.REPAIR_JOB_PARTS, partFields);
         }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const updatedJob = await getRecord(TABLES.REPAIR_JOBS, jobRecord.id);
 
         return {
           success: true,
-          jobId: jobRecord.fields.job_id || null,
+          jobId: updatedJob.fields.job_id || null,
           jobRecordId: jobRecord.id,
-          customerName: customer_name,
-          vehicleDescription: vehicle_description,
+          customer: customer_name,
+          vehicle: vehicle_description,
           licensePlate: license_plate || null,
           jobType: job_type,
           effortTier: normalizedTier,
           estimatedHours: estimated_hours,
-          laborCharge: labor_charge,
-          quotedPrice: quoted_price,
-          partsMatched: matchedParts.length,
+          tierRate: (updatedJob.fields.tier_rate as number) || 0,
+          suggestedLabor: (updatedJob.fields.suggested_labor as number) || 0,
+          partsSellTotal: (updatedJob.fields.parts_sell_total as number) || 0,
+          partsCostTotal: (updatedJob.fields.parts_cost_total as number) || 0,
+          suggestedTotal: (updatedJob.fields.suggested_total as number) || 0,
+          needsQuoteConfirmation: true,
           unmatchedParts,
         };
       } catch (err) {
         return {
           success: false,
           error: err instanceof Error ? err.message : "สร้างงานซ่อมไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
+  finalize_repair_quote: tool({
+    description:
+      `ยืนยันราคางานซ่อม — ตั้งค่าค่าแรงและราคาเสนอหลังจากมายตรวจสอบแล้ว (Set labor_charge and quoted_price on repair job after Mai confirms the suggested quote or provides an override.) IMPORTANT: Always confirm with user before calling.`,
+    parameters: z.object({
+      job_record_id: z.string().describe("Airtable record ID ของงานซ่อม"),
+      labor_charge: z.number().describe("ค่าแรงที่ยืนยัน (ใช้ suggested_labor หรือ override)"),
+      quoted_price: z.number().describe("ราคาเสนอลูกค้าที่ยืนยัน (ใช้ suggested_total หรือ override)"),
+    }),
+    execute: async ({ job_record_id, labor_charge, quoted_price }) => {
+      try {
+        await updateRecord(TABLES.REPAIR_JOBS, job_record_id, {
+          labor_charge,
+          quoted_price_to_customer: quoted_price,
+        });
+
+        const job = await getRecord(TABLES.REPAIR_JOBS, job_record_id);
+
+        return {
+          success: true,
+          jobId: (job.fields.job_id as number) || null,
+          jobRecordId: job_record_id,
+          laborCharge: labor_charge,
+          quotedPrice: quoted_price,
+          workorderUrl: `https://pinit-print-api.onrender.com/workorder/${job_record_id}`,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "ยืนยันราคางานซ่อมไม่สำเร็จ",
         };
       }
     },

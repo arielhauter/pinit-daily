@@ -661,10 +661,11 @@ function WorkOrderUpdateCard({ data }: { data: {
 function RepairJobCreationCard({ data }: { data: {
   success: boolean; error?: string;
   jobId?: number | null; jobRecordId?: string;
-  customerName?: string; vehicleDescription?: string; licensePlate?: string | null;
+  customer?: string; vehicle?: string; licensePlate?: string | null;
   jobType?: string[]; effortTier?: string; estimatedHours?: number;
-  laborCharge?: number; quotedPrice?: number;
-  partsMatched?: number; unmatchedParts?: string[];
+  tierRate?: number; suggestedLabor?: number;
+  partsSellTotal?: number; partsCostTotal?: number; suggestedTotal?: number;
+  needsQuoteConfirmation?: boolean; unmatchedParts?: string[];
 } }) {
   if (!data.success) {
     return (
@@ -675,21 +676,51 @@ function RepairJobCreationCard({ data }: { data: {
     );
   }
   return (
-    <div className="bg-slate-800 border-l-4 border-orange-500 rounded-r-lg p-3">
-      <div className="font-medium text-green-300">✅ สร้างงานซ่อม #{data.jobId} เรียบร้อย!</div>
-      <div className="text-sm text-slate-300 mt-1">👤 {data.customerName}</div>
-      <div className="text-sm text-slate-300">🏍 {data.vehicleDescription}{data.licensePlate ? ` (${data.licensePlate})` : ""}</div>
+    <div className="bg-slate-800 border-l-4 border-orange-400 rounded-r-lg p-3">
+      <div className="font-medium text-slate-100">📋 งานซ่อมใหม่ #{data.jobId}</div>
+      <div className="text-sm text-slate-300 mt-1">👤 {data.customer}</div>
+      <div className="text-sm text-slate-300">🏍 {data.vehicle}{data.licensePlate ? ` (${data.licensePlate})` : ""}</div>
       <div className="text-sm text-slate-300">🔧 {data.jobType?.join(", ")}</div>
       <div className="text-sm text-slate-300">⏱ {data.effortTier} — {data.estimatedHours} ชม.</div>
-      <div className="text-sm text-slate-300">💰 ค่าแรง {formatBaht(data.laborCharge || 0)} | เสนอราคา {formatBaht(data.quotedPrice || 0)}</div>
-      <div className="text-sm text-slate-300">🔩 อะไหล่ {data.partsMatched} รายการ</div>
+      <div className="mt-2 pt-2 border-t border-slate-700">
+        <div className="text-xs text-slate-400">💰 ราคาแนะนำ:</div>
+        <div className="text-sm text-slate-300">อะไหล่: {formatBaht(data.partsSellTotal || 0)}{(data.partsCostTotal || 0) > 0 && <span className="text-slate-500"> (ต้นทุน: {formatBaht(data.partsCostTotal || 0)})</span>}</div>
+        <div className="text-sm text-slate-300">ค่าแรง: {formatBaht(data.suggestedLabor || 0)}</div>
+        <div className="text-sm text-slate-100 font-medium">รวม: {formatBaht(data.suggestedTotal || 0)}</div>
+      </div>
       {data.unmatchedParts && data.unmatchedParts.length > 0 && (
         <div className="text-sm text-yellow-300 mt-1">⚠️ ไม่พบในระบบ: {data.unmatchedParts.join(", ")}</div>
       )}
-      {data.jobRecordId && (
+      {data.needsQuoteConfirmation && (
+        <div className="text-xs text-orange-400 mt-2">⏳ รอยืนยันราคา</div>
+      )}
+    </div>
+  );
+}
+
+function RepairQuoteFinalizedCard({ data }: { data: {
+  success: boolean; error?: string;
+  jobId?: number | null; jobRecordId?: string;
+  laborCharge?: number; quotedPrice?: number;
+  workorderUrl?: string;
+} }) {
+  if (!data.success) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-red-500 rounded-r-lg p-3">
+        <div className="font-medium text-red-300">❌ ยืนยันราคาไม่สำเร็จ</div>
+        <div className="text-sm text-slate-400 mt-1">{data.error}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-green-500 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ ยืนยันราคางานซ่อม #{data.jobId}!</div>
+      <div className="text-sm text-slate-300 mt-1">ค่าแรง: {formatBaht(data.laborCharge || 0)}</div>
+      <div className="text-sm text-slate-100 font-medium">ราคาเสนอ: {formatBaht(data.quotedPrice || 0)}</div>
+      {data.workorderUrl && (
         <button
-          className="mt-2 text-xs bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg transition-colors"
-          data-label-url={`https://pinit-print-api.onrender.com/workorder/${data.jobRecordId}`}
+          data-label-url={data.workorderUrl}
+          className="mt-2 text-sm bg-orange-800 text-orange-200 px-3 py-1 rounded-full cursor-pointer"
         >
           🖨 พิมพ์ใบสั่งงาน
         </button>
@@ -891,6 +922,8 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <WorkOrderUpdateCard data={data as Parameters<typeof WorkOrderUpdateCard>[0]["data"]} />;
     case "create_repair_job":
       return <RepairJobCreationCard data={data as Parameters<typeof RepairJobCreationCard>[0]["data"]} />;
+    case "finalize_repair_quote":
+      return <RepairQuoteFinalizedCard data={data as Parameters<typeof RepairQuoteFinalizedCard>[0]["data"]} />;
     case "update_product":
       return <ProductUpdateCard data={data as Parameters<typeof ProductUpdateCard>[0]["data"]} />;
     case "delete_record":
