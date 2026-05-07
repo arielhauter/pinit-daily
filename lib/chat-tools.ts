@@ -1614,7 +1614,6 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
           effort_tier: normalizedTier,
           estimated_hours,
           quoted_date: new Date().toISOString().split("T")[0],
-          created_by: "Mai",
         };
         if (license_plate) jobFields.license_plate = license_plate;
         if (notes) jobFields.notes = notes;
