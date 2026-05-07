@@ -1604,6 +1604,7 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
         });
 
         const normalizedTier = normalizeSelect(effort_tier, EFFORT_TIER_MAP);
+        const estimated_hours_seconds = Math.round(estimated_hours * 3600);
 
         const jobFields: Record<string, unknown> = {
           customer: [customerId],
@@ -1612,7 +1613,7 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
           job_type,
           status: "รับงาน (Quoting)",
           effort_tier: normalizedTier,
-          estimated_hours,
+          estimated_hours: estimated_hours_seconds,
           quoted_date: new Date().toISOString().split("T")[0],
         };
         if (license_plate) jobFields.license_plate = license_plate;
@@ -1633,7 +1634,7 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
           await createRecord(TABLES.REPAIR_JOB_PARTS, partFields);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         const updatedJob = await getRecord(TABLES.REPAIR_JOBS, jobRecord.id);
 
         return {
