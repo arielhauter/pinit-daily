@@ -2,6 +2,8 @@ import { streamText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { SYSTEM_PROMPT } from "@/lib/chat-system-prompt";
 import { chatTools } from "@/lib/chat-tools";
+import { selectRecords, createRecord } from "@/lib/airtable";
+import { TABLES, DAILY_COST_CAP_CENTS } from "@/lib/constants";
 
 export const maxDuration = 60;
 
@@ -70,9 +72,30 @@ function addCacheControl(messages: any[]): any[] {
   });
 }
 
+async function getDailySpend(): Promise<number> {
+  try {
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+    const logs = await selectRecords(TABLES.ACTIVITY_LOG, {
+      filterByFormula: `AND(IS_SAME({timestamp}, '${today}', 'day'), {token_cost} > 0)`,
+      fields: ["token_cost"],
+    });
+    return logs.reduce((sum, r) => sum + ((r.fields.token_cost as number) || 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { messages, oracleMode } = await req.json();
+
+    const dailySpend = await getDailySpend();
+    if (dailySpend >= DAILY_COST_CAP_CENTS) {
+      return Response.json(
+        { error: `ถึงขีดจำกัดค่าใช้จ่ายประจำวันแล้วค่ะ (฿${(DAILY_COST_CAP_CENTS / 100).toFixed(2)}) กรุณาติดต่อ Mint ค่ะ` },
+        { status: 429 }
+      );
+    }
 
     const model = selectModel(messages, oracleMode);
     const trimmedMessages = trimMessages(messages);
@@ -84,8 +107,39 @@ export async function POST(req: Request) {
       messages: messagesWithCache,
       tools: chatTools,
       maxSteps: 5,
-      onFinish: async ({ experimental_providerMetadata }) => {
+      onFinish: async ({ usage, experimental_providerMetadata }) => {
         console.log("CACHE METRICS:", JSON.stringify(experimental_providerMetadata?.anthropic));
+
+        const inputTokens = usage?.promptTokens || 0;
+        const outputTokens = usage?.completionTokens || 0;
+        const cachedTokens = (experimental_providerMetadata?.anthropic as any)?.cacheReadInputTokens || 0;
+
+        const isHaiku = model.includes("haiku");
+        const inputRate = isHaiku ? 0.001 : 0.003;
+        const outputRate = isHaiku ? 0.005 : 0.015;
+        const cacheRate = isHaiku ? 0.0001 : 0.0003;
+
+        const uncachedInput = inputTokens - cachedTokens;
+        const cost =
+          (uncachedInput * inputRate) / 1000 +
+          (cachedTokens * cacheRate) / 1000 +
+          (outputTokens * outputRate) / 1000;
+        const costCents = Math.round(cost * 100);
+
+        if (costCents > 0) {
+          try {
+            await createRecord(TABLES.ACTIVITY_LOG, {
+              timestamp: new Date().toISOString(),
+              action_type: "api_call",
+              user: "System",
+              summary: `API: ${inputTokens} in / ${outputTokens} out / ${cachedTokens} cached`,
+              model_used: model,
+              token_cost: costCents,
+            });
+          } catch (e) {
+            console.error("Cost logging error:", e);
+          }
+        }
       },
     });
 

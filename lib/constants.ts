@@ -11,6 +11,8 @@ export const TABLES = {
   VEHICLES: "Vehicles",
   DAILY_CASH_RECONCILIATION: "Daily Cash Reconciliation",
   DAILY_PERSON_DRAWS: "Daily Person Draws",
+  ACTIVITY_LOG: "Activity Log",
+  CHAT_SESSIONS: "Chat Sessions",
 } as const;
 
 export const EFFORT_TIER_MAP: Record<string, string> = {
@@ -74,6 +76,11 @@ export function normalizeName(name: string): string {
 
 export const VARIANCE_THRESHOLD = parseInt(
   process.env.VARIANCE_THRESHOLD || "50",
+  10
+);
+
+export const DAILY_COST_CAP_CENTS = parseInt(
+  process.env.DAILY_COST_CAP_CENTS || "500",
   10
 );
 

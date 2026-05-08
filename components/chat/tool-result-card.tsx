@@ -862,6 +862,62 @@ function ReceivingConfirmCard({ data }: { data: {
   );
 }
 
+function DailyChecklistCard({ data }: { data: {
+  date: string;
+  pendingReceiving: { count: number; items: Array<{ name: string; quantity: number }> };
+  activeRepairs: { count: number; jobs: Array<{ jobId: number; customer: unknown; vehicle: string }> };
+  unpaidRepairs: { count: number; jobs: Array<{ jobId: number; customer: unknown; quotedPrice: number }> };
+  todaySummary: { salesCount: number; salesTotal: number; expensesCount: number; expensesTotal: number };
+  recentActivity: Array<{ type: string; summary: string }>;
+} }) {
+  const unpaidTotal = data.unpaidRepairs.jobs.reduce((sum, j) => sum + (j.quotedPrice || 0), 0);
+
+  return (
+    <div className="bg-slate-800 border-l-4 border-yellow-400 rounded-r-lg p-3 space-y-2">
+      <div className="font-medium text-yellow-300">☀️ สรุปงานวันนี้</div>
+
+      {(data.todaySummary.salesCount > 0 || data.todaySummary.expensesCount > 0) && (
+        <div className="text-sm text-slate-300">
+          📊 ขาย {data.todaySummary.salesCount} รายการ ({formatBaht(data.todaySummary.salesTotal)})
+          {data.todaySummary.expensesCount > 0 && (
+            <span> | ค่าใช้จ่าย {data.todaySummary.expensesCount} ({formatBaht(data.todaySummary.expensesTotal)})</span>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-1 text-sm">
+        {data.pendingReceiving.count > 0 && (
+          <div
+            data-card-action="รับของ"
+            className="text-slate-300 cursor-pointer hover:text-white"
+          >
+            📦 รอรับสินค้า {data.pendingReceiving.count} รายการ
+          </div>
+        )}
+        {data.activeRepairs.count > 0 && (
+          <div
+            data-card-action="ดูงานซ่อม กำลังซ่อม"
+            className="text-slate-300 cursor-pointer hover:text-white"
+          >
+            🔧 งานซ่อมกำลังทำ {data.activeRepairs.count} งาน
+          </div>
+        )}
+        {data.unpaidRepairs.count > 0 && (
+          <div
+            data-card-action="ดูงานซ่อม เสร็จแล้ว"
+            className="text-slate-300 cursor-pointer hover:text-white"
+          >
+            💰 รอเก็บเงิน {data.unpaidRepairs.count} งาน ({formatBaht(unpaidTotal)})
+          </div>
+        )}
+        {data.pendingReceiving.count === 0 && data.activeRepairs.count === 0 && data.unpaidRepairs.count === 0 && (
+          <div className="text-green-400">✅ ไม่มีงานค้าง</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ToolResultCard({ toolName, state, result }: ToolResultCardProps) {
   if (state !== "result") {
     return (
@@ -932,6 +988,8 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <PendingReceivingCard data={data as Parameters<typeof PendingReceivingCard>[0]["data"]} />;
     case "confirm_receiving":
       return <ReceivingConfirmCard data={data as Parameters<typeof ReceivingConfirmCard>[0]["data"]} />;
+    case "get_daily_checklist":
+      return <DailyChecklistCard data={data as Parameters<typeof DailyChecklistCard>[0]["data"]} />;
     default:
       return (
         <pre className="text-xs text-slate-400 overflow-auto">

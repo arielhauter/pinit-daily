@@ -117,6 +117,29 @@ function normalizeSelect(value: string, map: Record<string, string>): string {
   return map[lower] || map[cleaned] || cleaned;
 }
 
+async function logActivity(params: {
+  action_type: string;
+  user?: string;
+  summary: string;
+  linked_table?: string;
+  linked_record_id?: string;
+  model_used?: string;
+}) {
+  try {
+    await createRecord(TABLES.ACTIVITY_LOG, {
+      timestamp: new Date().toISOString(),
+      action_type: params.action_type,
+      user: params.user || "Mai",
+      summary: params.summary,
+      linked_table: params.linked_table || undefined,
+      linked_record_id: params.linked_record_id || undefined,
+      model_used: params.model_used || undefined,
+    });
+  } catch (e) {
+    console.error("Activity log error:", e);
+  }
+}
+
 function extractPhotoUrl(photoField: unknown): string | null {
   if (
     Array.isArray(photoField) &&
@@ -554,6 +577,13 @@ After multi-item: always ask "เพิ่มสินค้าอีกไห�
 
         await createRecords("Sale Line Items", lineItemRecords);
 
+        await logActivity({
+          action_type: "sale_created",
+          summary: `ขาย ${items.map(i => `${i.product_name} ×${i.quantity}`).join(", ")} = ฿${computedTotal}`,
+          linked_table: "Sales",
+          linked_record_id: saleRecord.id,
+        });
+
         return {
           success: true,
           saleId: saleRecord.id,
@@ -610,6 +640,13 @@ Present common ones as quick choices: ค่าน้ำมันรถ, ค่�
         }
 
         const record = await createRecord(TABLES.EXPENSES, fields);
+
+        await logActivity({
+          action_type: "expense_created",
+          summary: `${normalizedCategory} ฿${amount} (${normalizedPayment})`,
+          linked_table: "Expenses",
+          linked_record_id: record.id,
+        });
 
         return {
           success: true,
@@ -698,6 +735,13 @@ OPTIONAL: shipping_cost, note.`,
         }));
 
         await createRecords(TABLES.PURCHASE_LINE_ITEMS, lineItemRecords);
+
+        await logActivity({
+          action_type: "purchase_created",
+          summary: `ซื้อจาก ${supplier_name} ${items.length} รายการ ฿${total_paid}`,
+          linked_table: "Purchases",
+          linked_record_id: purchaseRecord.id,
+        });
 
         return {
           success: true,
@@ -794,10 +838,20 @@ Flow: lookup_product → ask "นับได้กี่ชิ้น?" → show
           counted_by: counted_by || "Mai",
         });
 
+        const productName = (product.fields.display_name as string) || "";
+        const sku = (product.fields.sku as string) || "";
+
+        await logActivity({
+          action_type: "stock_counted",
+          summary: `${productName} (${sku}) ${currentStock} → ${new_count}`,
+          linked_table: "Products",
+          linked_record_id: product_record_id,
+        });
+
         return {
           success: true,
-          productName: (product.fields.display_name as string) || "",
-          sku: (product.fields.sku as string) || "",
+          productName,
+          sku,
           previousStock: currentStock,
           newStock: new_count,
           difference,
@@ -805,7 +859,7 @@ Flow: lookup_product → ask "นับได้กี่ชิ้น?" → show
       } catch (err) {
         return {
           success: false,
-          error: err instanceof Error ? err.message : "อัปเดตสต็อกไม่สำเร็จ",
+          error: err instanceof Error ? err.message : "อัปเดตสต็อกไม่สำเร��จ",
         };
       }
     },
@@ -878,6 +932,13 @@ Valid transitions: รับงาน→กำลังซ่อม, กำล�
         }
 
         await updateRecord(TABLES.REPAIR_JOBS, job_record_id, updateFields);
+
+        await logActivity({
+          action_type: "repair_status_updated",
+          summary: `งาน #${currentRecord.fields.job_id} ${currentStatus} → ${normalizedStatus}`,
+          linked_table: "Repair Jobs",
+          linked_record_id: job_record_id,
+        });
 
         const returnData: Record<string, unknown> = {
           success: true,
@@ -1395,6 +1456,13 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
 
         await updateRecord(TABLES.REPAIR_JOBS, jobRecord.id, updateFields);
 
+        await logActivity({
+          action_type: "workorder_processed",
+          summary: `ใบสั่งงาน #${job_id} — ${actual_hours_seconds / 3600}ชม.`,
+          linked_table: "Repair Jobs",
+          linked_record_id: jobRecord.id,
+        });
+
         const matchedParts: string[] = [];
         const unmatchedParts: string[] = [];
 
@@ -1639,6 +1707,13 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
         await new Promise(resolve => setTimeout(resolve, 2000));
         const updatedJob = await getRecord(TABLES.REPAIR_JOBS, jobRecord.id);
 
+        await logActivity({
+          action_type: "repair_job_created",
+          summary: `งานซ่อม #${updatedJob.fields.job_id || ""} ${customer_name} ${vehicle_description}`,
+          linked_table: "Repair Jobs",
+          linked_record_id: jobRecord.id,
+        });
+
         return {
           success: true,
           jobId: updatedJob.fields.job_id || null,
@@ -1682,6 +1757,13 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
         });
 
         const job = await getRecord(TABLES.REPAIR_JOBS, job_record_id);
+
+        await logActivity({
+          action_type: "repair_quote_finalized",
+          summary: `งาน #${job.fields.job_id || ""} ราคาเสนอ ฿${quoted_price}`,
+          linked_table: "Repair Jobs",
+          linked_record_id: job_record_id,
+        });
 
         return {
           success: true,
@@ -1727,6 +1809,13 @@ Effort tiers: Tier 1 งานเร็ว ฿120/h, Tier 2 งานปกต�
         }
 
         await updateRecord(TABLES.PRODUCTS, product_record_id, updateFields);
+
+        await logActivity({
+          action_type: "product_updated",
+          summary: `${product.fields.display_name} — ${Object.entries(updateFields).map(([f, v]) => `${f}: ${product.fields[f]}→${v}`).join(", ")}`,
+          linked_table: "Products",
+          linked_record_id: product_record_id,
+        });
 
         return {
           success: true,
@@ -1789,6 +1878,13 @@ Warn "ลบแล้วกู้คืนไม่ได้". For Sales: warn s
         }
 
         await deleteRecord(table, record_id);
+
+        await logActivity({
+          action_type: "record_deleted",
+          summary: `ลบ ${table}: ${reason}`,
+          linked_table: table,
+          linked_record_id: record_id,
+        });
 
         return {
           success: true,
@@ -1892,6 +1988,12 @@ After confirming: offer label printing. If items remain pending, mention count. 
           results.push({ id, adjusted: !!adjustment });
         }
 
+        await logActivity({
+          action_type: "items_received",
+          summary: `รับสินค้า ${results.length} รายการ`,
+          linked_table: "Purchase Line Items",
+        });
+
         return {
           success: true,
           receivedCount: results.length,
@@ -1902,6 +2004,106 @@ After confirming: offer label printing. If items remain pending, mention count. 
         return {
           success: false,
           error: err instanceof Error ? err.message : "ยืนยันรับสินค้าไม่สำเร็จ",
+        };
+      }
+    },
+  }),
+
+  get_daily_checklist: tool({
+    description:
+      "ดูรายการสิ่งที่ต้องทำวันนี้ — งานค้าง, สินค้ารอรับ, งานซ่อมรอเก็บเงิน (Get daily to-do list: pending tasks, items to receive, repairs to collect payment)",
+    parameters: z.object({}),
+    execute: async () => {
+      try {
+        const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+
+        const [
+          pendingReceiving,
+          activeRepairs,
+          unpaidRepairs,
+          todaySales,
+          todayExpenses,
+          recentActivity,
+        ] = await Promise.all([
+          selectRecords(TABLES.PURCHASE_LINE_ITEMS, {
+            filterByFormula: "{is_received} = FALSE()",
+            fields: ["product_name_lookup", "quantity"],
+            maxRecords: 100,
+          }),
+          selectRecords(TABLES.REPAIR_JOBS, {
+            filterByFormula: `{status} = "กำลังซ่อม (In Progress)"`,
+            fields: ["job_id", "customer", "vehicle_description", "status"],
+          }),
+          selectRecords(TABLES.REPAIR_JOBS, {
+            filterByFormula: `{status} = "เสร็จแล้ว (Complete)"`,
+            fields: ["job_id", "customer", "vehicle_description", "quoted_price"],
+          }),
+          selectRecords(TABLES.SALES, {
+            filterByFormula: `IS_SAME({sale_date}, '${today}', 'day')`,
+            fields: ["sale_id", "total_collected"],
+          }),
+          selectRecords(TABLES.EXPENSES, {
+            filterByFormula: `{expense_date} = '${today}'`,
+            fields: ["amount"],
+          }),
+          selectRecords(TABLES.ACTIVITY_LOG, {
+            filterByFormula: `IS_SAME({timestamp}, '${today}', 'day')`,
+            fields: ["action_type", "summary", "timestamp"],
+            sort: [{ field: "timestamp", direction: "desc" }],
+            maxRecords: 5,
+          }),
+        ]);
+
+        const todaySalesTotal = todaySales.reduce(
+          (sum, s) => sum + ((s.fields.total_collected as number) || 0),
+          0
+        );
+        const todayExpensesTotal = todayExpenses.reduce(
+          (sum, e) => sum + ((e.fields.amount as number) || 0),
+          0
+        );
+
+        return {
+          date: today,
+          pendingReceiving: {
+            count: pendingReceiving.length,
+            items: pendingReceiving.slice(0, 5).map((r) => ({
+              name: Array.isArray(r.fields.product_name_lookup)
+                ? r.fields.product_name_lookup[0]
+                : r.fields.product_name_lookup || "Unknown",
+              quantity: r.fields.quantity,
+            })),
+          },
+          activeRepairs: {
+            count: activeRepairs.length,
+            jobs: activeRepairs.map((r) => ({
+              jobId: r.fields.job_id,
+              customer: r.fields.customer,
+              vehicle: r.fields.vehicle_description,
+            })),
+          },
+          unpaidRepairs: {
+            count: unpaidRepairs.length,
+            jobs: unpaidRepairs.map((r) => ({
+              jobId: r.fields.job_id,
+              customer: r.fields.customer,
+              quotedPrice: r.fields.quoted_price,
+            })),
+          },
+          todaySummary: {
+            salesCount: todaySales.length,
+            salesTotal: todaySalesTotal,
+            expensesCount: todayExpenses.length,
+            expensesTotal: todayExpensesTotal,
+          },
+          recentActivity: recentActivity.map((r) => ({
+            type: r.fields.action_type,
+            summary: r.fields.summary,
+          })),
+        };
+      } catch (err) {
+        return {
+          error: err instanceof Error ? err.message : "ดึงข้อมูลเช็คลิสต์ไม่สำเร็จ",
         };
       }
     },
