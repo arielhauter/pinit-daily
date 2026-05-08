@@ -40,17 +40,24 @@ export async function POST(request: Request) {
     let ledgerPhotoUrl: string | undefined;
     if (data.imageBase64) {
       try {
+        let imageBuffer: Buffer;
+        let contentType = "image/jpeg";
+
         const match = data.imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
         if (match) {
-          const contentType = match[1];
-          const ext = contentType.split("/")[1] || "jpg";
-          const buffer = Buffer.from(match[2], "base64");
-          const filename = `ledger-${data.date}-${Date.now()}.${ext}`;
-          const blob = await put(filename, buffer, { access: "public", contentType });
-          ledgerPhotoUrl = blob.url;
+          contentType = match[1];
+          imageBuffer = Buffer.from(match[2], "base64");
+        } else {
+          console.log("LEDGER PHOTO: No data URI prefix, using raw base64");
+          imageBuffer = Buffer.from(data.imageBase64, "base64");
         }
+
+        const ext = contentType.split("/")[1] || "jpg";
+        const filename = `ledger-${data.date}-${Date.now()}.${ext}`;
+        const blob = await put(filename, imageBuffer, { access: "public", contentType });
+        ledgerPhotoUrl = blob.url;
       } catch (uploadErr) {
-        console.error("Ledger photo upload failed:", uploadErr);
+        console.error("LEDGER PHOTO ERROR:", uploadErr);
       }
     }
 
@@ -75,6 +82,7 @@ export async function POST(request: Request) {
     }
 
     if (ledgerPhotoUrl) {
+      console.log('LEDGER PHOTO SAVE:', ledgerPhotoUrl);
       reconciliationFields.ledger_photo = [{ url: ledgerPhotoUrl }];
     }
 
@@ -84,6 +92,7 @@ export async function POST(request: Request) {
 
     return Response.json({ success: true, streak });
   } catch (err) {
+    console.error('LEDGER PHOTO ERROR:', err);
     console.error("Reconcile error:", err);
     return Response.json(
       { error: err instanceof Error ? err.message : "Failed to save reconciliation" },

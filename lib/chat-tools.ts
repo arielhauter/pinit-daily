@@ -1348,7 +1348,7 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
       image_url: z
         .string()
         .optional()
-        .describe("URL ของรูปใบสั่งงาน (ถ้ามี — ได้จากข้อความที่ Mai ส่งมา)"),
+        .describe("URL ของรูปใบสั่งงาน — MUST extract from 'image_url_for_tool:' in the conversation message. Always include this if present."),
     }),
     execute: async ({
       job_id,
@@ -1388,6 +1388,7 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
         if (boot_advice) {
           updateFields.boot_advice_for_mai = boot_advice;
         }
+        console.log('WORKORDER PHOTO SAVE:', image_url);
         if (image_url) {
           updateFields.workorder_photo = [{ url: image_url }];
         }
@@ -1431,6 +1432,7 @@ Default to "month" if user doesn't specify. Periods: today, yesterday, week, las
           bootAdvice: boot_advice || null,
         };
       } catch (err) {
+        console.error('WORKORDER PHOTO ERROR:', err);
         return {
           success: false,
           error:

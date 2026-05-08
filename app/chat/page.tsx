@@ -137,13 +137,13 @@ export default function ChatPage() {
           : "ไม่มี";
 
       const imageUrls = (extraction.image_urls || []) as string[];
-      const imageUrlLine = imageUrls.length > 0
-        ? "\n- รูปใบสั่งงาน: " + imageUrls.join(", ")
+      const imageUrlForTool = imageUrls.length > 0
+        ? `\n\nimage_url_for_tool: ${imageUrls[0]}`
         : "";
 
       append({
         role: "user",
-        content: `📋 ถ่ายรูปใบสั่งงานซ่อม งาน #${extraction.job_id} (${pages.length} หน้า)\n\nข้อมูลที่อ่านได้:\n- ชั่วโมงรวม: ${extraction.total_hours} ชม.\n- อะไหล่เพิ่ม: ${partsText}\n- หมายเหตุ: ${extraction.notes || "ไม่มี"}\n- คำแนะนำลูกค้า: ${extraction.advice_for_customer || "ไม่มี"}${imageUrlLine}\n\nถูกต้องไหม?`,
+        content: `📋 ถ่ายรูปใบสั่งงานซ่อม งาน #${extraction.job_id} (${pages.length} หน้า)\n\nข้อมูลที่อ่านได้:\n- ชั่วโมงรวม: ${extraction.total_hours} ชม.\n- อะไหล่เพิ่ม: ${partsText}\n- หมายเหตุ: ${extraction.notes || "ไม่มี"}\n- คำแนะนำลูกค้า: ${extraction.advice_for_customer || "ไม่มี"}${imageUrlForTool}\n\nถูกต้องไหม?`,
       });
     } catch {
       append({
