@@ -918,6 +918,27 @@ function DailyChecklistCard({ data }: { data: {
   );
 }
 
+function CustomerCreatedCard({ data }: { data: { success: boolean; name: string; phone: string | null; existingCustomer?: { id: string; name: string; phone: string | null } } }) {
+  if (!data.success && data.existingCustomer) {
+    return (
+      <div className="bg-slate-800 border-l-4 border-yellow-500 rounded-r-lg p-3">
+        <div className="font-medium text-yellow-300">⚠️ ลูกค้ามีอยู่แล้ว</div>
+        <div className="text-sm text-slate-300 mt-1">{data.existingCustomer.name}</div>
+        {data.existingCustomer.phone && (
+          <div className="text-xs text-slate-400">{data.existingCustomer.phone}</div>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="bg-slate-800 border-l-4 border-green-500 rounded-r-lg p-3">
+      <div className="font-medium text-green-300">✅ สร้างลูกค้าใหม่แล้ว</div>
+      <div className="text-sm text-slate-300 mt-1">{data.name}</div>
+      {data.phone && <div className="text-xs text-slate-400">{data.phone}</div>}
+    </div>
+  );
+}
+
 export function ToolResultCard({ toolName, state, result }: ToolResultCardProps) {
   if (state !== "result") {
     return (
@@ -990,6 +1011,8 @@ export function ToolResultCard({ toolName, state, result }: ToolResultCardProps)
       return <ReceivingConfirmCard data={data as Parameters<typeof ReceivingConfirmCard>[0]["data"]} />;
     case "get_daily_checklist":
       return <DailyChecklistCard data={data as Parameters<typeof DailyChecklistCard>[0]["data"]} />;
+    case "create_customer":
+      return <CustomerCreatedCard data={data as Parameters<typeof CustomerCreatedCard>[0]["data"]} />;
     default:
       return (
         <pre className="text-xs text-slate-400 overflow-auto">

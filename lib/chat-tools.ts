@@ -2108,4 +2108,59 @@ After confirming: offer label printing. If items remain pending, mention count. 
       }
     },
   }),
+
+  create_customer: tool({
+    description:
+      "สร้างลูกค้าใหม่ (Create a new customer record). Searches for existing customer first to prevent duplicates. IMPORTANT: Always confirm with user before calling.",
+    parameters: z.object({
+      name: z.string().describe("ชื่อลูกค้า"),
+      phone: z.string().optional().describe("เบอร์โทร"),
+    }),
+    execute: async ({ name, phone }) => {
+      try {
+        const s = sanitizeForFormula(name);
+        const existing = await selectRecords("Customers", {
+          filterByFormula: `SEARCH("${s}", {Name})`,
+          maxRecords: 1,
+          fields: ["Name", "Phone"],
+        });
+
+        if (existing.length > 0) {
+          return {
+            success: false,
+            error: `ลูกค้าชื่อ "${name}" มีอยู่ในระบบแล้ว`,
+            existingCustomer: {
+              id: existing[0].id,
+              name: existing[0].fields.Name,
+              phone: existing[0].fields.Phone || null,
+            },
+          };
+        }
+
+        const fields: Record<string, unknown> = { Name: name };
+        if (phone) fields.Phone = phone;
+
+        const record = await createRecord("Customers", fields);
+
+        await logActivity({
+          action_type: "customer_created",
+          summary: `สร้างลูกค้าใหม่: ${name}${phone ? " (" + phone + ")" : ""}`,
+          linked_table: "Customers",
+          linked_record_id: record.id,
+        });
+
+        return {
+          success: true,
+          id: record.id,
+          name,
+          phone: phone || null,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "สร้างลูกค้าไม่สำเร็จ",
+        };
+      }
+    },
+  }),
 };
